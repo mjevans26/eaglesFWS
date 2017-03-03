@@ -1,0 +1,98 @@
+/*Some custom css to modify the standard Shiny values. */
+
+.modal-dialog {
+    width: 50%;
+}
+
+.container {
+  height: 100px;
+  width: inherit;
+  padding-right: 0px;
+  padding-left: 10px;
+  margin-right: auto;
+  margin-left: auto;
+}
+.container>.navbar-header{
+  margin-right: 0px;
+  margin-left: 0px;
+}
+.navbar-header{
+  float: right;
+}
+
+.navbar-default .navbar-brand{
+  color: #ffffff;
+}
+.navbar-default .navbar-nav>li>a{
+  color: #ffffff !important;
+}
+
+.navbar-default .navbar-nav>.active>a{
+  color: #555 !important;
+}
+
+.navbar-default {
+  background-color: #0A4783 !important;
+}
+
+.box.box-warning {
+    border-top-color: #f39c12;
+}
+
+.box.box-primary {
+    border-top-color: #0A4783;
+}
+.box.box-solid.box-primary {
+  border: 1px solid #0A4783;
+}
+
+.box.box-solid.box-primary > .box-header {
+  color: #ffffff;
+  background-color: #0A4783;
+}
+.box.box-solid.box-primary > .box-header a,
+.box.box-solid.box-primary > .box-header .btn {
+  color: #ffffff;
+}
+
+.btn-primary {
+    background-color: #0A4783;
+    border-color: #367fa9;
+}
+
+.bg-orange {
+    background-color: #440154 !important;
+}
+
+.bg-red {
+    background-color: #FDE725 !important;
+    color: #000000 !important;
+}
+
+.bg-yellow{
+  background-color: #35B779 !important;
+}
+
+.bg-green{
+  background-color: #31688E !important;
+}
+
+.bg-blue {
+    background-color: #0A4783 !important;
+}
+
+.content-wrapper{
+  background-color: white;
+}
+
+div.outer {
+    position: fixed;
+    background-color: white;
+    top: 41px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
