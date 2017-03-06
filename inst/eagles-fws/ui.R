@@ -17,14 +17,29 @@ body <- dashboardBody(
     tags$link(rel = "stylesheet", type = "text/css", href = "custom_styles.css")),
 
   navbarPage(div(column(4,tags$a(href = "http://www.defenders.org", tags$img(src = "01_DOW_LOGO_COLOR_300-01.png", height = "80px"))), column(8, h4("Defenders of Widlife", br(), "Center for Conservation Innovation"))),
-   tabPanel(h4("Overview"),id = "summary", fluidPage(
+   tabPanel(h4("FWS Eagle Take Estimator"),id = "summary",
+    fluidPage(
     fluidRow(
-     column(4,numericInput("time", label = "Eagle flight time (min)", value = mean(Bay16$flight_time), min = 0),
-            numericInput("effort", label = "Survey Effort (km2*hr)", value = mean(Bay16$effort), min = 0)),
-     column(8, h2("Funding the ESA"),
-      plotlyOutput("distributions")
+     column(4,
+            h4("FWS uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
+               This approach combines prior information about eagle collision rates, and exposure across wind farms, with
+               observed estimates of eagle activity at proposed sites to estimate the likely number of fatalities.",
+            br(),br(),
+            "Select one of the wind sites below and click 'Update Distributions' to see how eagle survey information at a given location
+            is integrated with prior information about eagle exposure and collision rates to produce an estimate of fatality"),
+            selectInput("sites", "Choose a Site", choices = c("", levels(Bay16$SITE)), selected = NULL),
+            h4("Alternatively, enter your own survey information",br(), "(Note: the site selector must be empty)"),
+            numericInput("time", label = "Eagle flight time (min)", value = mean(Bay16$FLIGHT_MIN), min = 0),
+            numericInput("effort", label = "Survey Effort (km2*hr)", value = mean(Bay16$EFFORT), min = 0),
+            actionButton("update", "Update Distributions"),
+            h4("Finally, click 'Calculate Fatalities' to produce the combined probability distribution"),
+            actionButton("calculate", "Calculate Fatalities")),
+     column(8,
+            plotlyOutput("prior"),
+            plotlyOutput("exposure"),
+            plotlyOutput("fatal")
+            )
      )
-    )
     )), fluid=TRUE
   ),
   br(),

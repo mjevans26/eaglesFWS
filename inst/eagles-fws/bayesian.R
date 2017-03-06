@@ -1,25 +1,68 @@
 bayesian <- function(input, output, session) {
 
-observeEvent(input$time,{
-  obs <- isolate({
-  rgamma(1000,shape = mean(Bay16$flight_time) + input$time,  rate = mean(Bay16$effort) + input$effort)%>%
-    density()
-})
-})
+    a <- reactive({if(input$sites == ""){
+      mean(Bay16$FLIGHT_MIN)+input$time
+    }else if(input$sites != ""){
+      mean(Bay16$FLIGHT_MIN)+Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]}})
 
+    b <- reactive({if(input$sites == ""){
+      mean(Bay16$EFFORT)+input$effort
+    }else if(input$sites != ""){
+      mean(Bay16$EFFORT)+ Bay16$EFFORT[Bay16$SITE == input$sites]}})
 
-observeEvent(input$time,{
-line <- isolate({
-  input$time/input$effort
-})
-})
+    act <- reactive({if(input$sites == ""){
+      input$time/input$effort
+    }else if(input$sites != ""){
+    act <- Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]/Bay16$EFFORT[Bay16$SITE == input$sites]}})
 
-output$distributions <- renderPlotly({
-plot_ly()%>%
-  add_trace(x = ~prior$x, y = ~ prior$y, type = "scatter", mode = "lines", fill = "tozeroy", name = "FWS Prior")%>%
-  add_trace(x = ~obs$x, y = ~obs$y, type = "scatter", mode = "lines", fill = "tozeroy", name = "Posterior")%>%
-  add_trace(x = c(line, line), y = c(0, 10), name = "Observed Exposure", type = "scatter", mode = "lines")%>%
-  layout(title = "Bayesian")
+  observeEvent(input$update,{
+    act <- isolate({act()})
+    obs <- isolate({density(rgamma(10000, shape = a(), rate = b()))})
 
-})
+    output$exposure <- renderPlotly({
+      plot_ly()%>%
+        add_trace(x = ~obs$x, y = ~obs$y, type = "scatter", mode = "lines", fill = "tozeroy",
+                  name = "Posterior",
+                  text = ~paste("Posterior probability of Exposure = ", round(obs$x, 2), "<br> is ", round(obs$y, 2),sep = ""), hoverinfo = "text")%>%
+        add_trace(x = ~prior$x, y = prior$y, type = "scatter", mode = "lines", fill = "tozeroy",
+                  name = "Prior",
+                  text = ~paste("Prior probability of Exposure = ", round(prior$x, 2), "<br> is ", round(prior$y, 2),sep = ""), hoverinfo = "text")%>%
+        add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))), type = "scatter", mode = "lines",
+                  name = "Observed",
+                  text = ~paste("Observed Exposure = ", act, sep = ""), hoverinfo = "text")%>%
+        layout(title = "Eagle Exposure",
+               xaxis = list(title = "Exposure (min/km3*hr)"),
+               yaxis = list(title = "Probability"))
+    })
+
+  })
+
+  observeEvent(input$calculate,{
+    out <- isolate({prediction(10000, a(), b())})
+    fatality <- isolate({density(out$fatality)})
+    out2 <- isolate({prediction(10000, a()-mean(Bay16$FLIGHT_MIN), b()-mean(Bay16$EFFORT))})
+    fatality2 <- isolate({density(out2$fatality)})
+
+    output$fatal <- renderPlotly({
+      plot_ly()%>%
+        add_trace(x = ~fatality$x, y = ~fatality$y/fatality$n, type = "scatter", mode = "lines", fill = "tozeroy",
+                  name = "Using Exposure Prior", line = list(color = "purple"),
+                  text = ~paste("Posterior probability of<br>", round(fatality$x, 2), "fatalities is ", round(fatality$y/fatality$n, 2),sep = ""), hoverinfo = "text")%>%
+        add_trace(x = ~fatality2$x, y = ~fatality2$y/fatality2$n, type = "scatter", mode = "lines", fill = "tozeroy",
+                  line = list(color = "green"), name = "Using Site Survey Only")%>%
+        layout(title = "Predicted Annual Eagle Fatalities",
+               xaxis = list(title = "Fatalities per Year"),
+               yaxis = list(title = "Probability"))
+    })
+  })
+
+  output$prior <- renderPlotly({
+  plot_ly()%>%
+  add_trace(x = ~collision$x, y = ~collision$y/collision$n, type = "scatter", mode = "lines", fill = "tozeroy",
+            name = "Prior", line = list(color = "red"),
+            text = ~paste("Prior probability of Collision Rate = ", round(collision$x, 3), "<br> is ", round(collision$y/collision$n, 2),sep = ""), hoverinfo = "text")%>%
+      layout(title = "Prior Collision Rates",
+             xaxis = list(title = "Collision Rate (per Exposure)"),
+             yaxis = list(title = "Probability"))
+  })
 }
