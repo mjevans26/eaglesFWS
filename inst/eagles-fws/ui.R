@@ -20,26 +20,45 @@ body <- dashboardBody(
    tabPanel(h4("FWS Eagle Take Estimator"),id = "summary",
     fluidPage(
     fluidRow(
+      column(2,br()),
+      column(8,
+             h4("Fish and Wildlife Servies uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
+               This approach combines prior information about eagle collision rates and exposure across wind farms, with
+               observed estimates of eagle activity at proposed sites to estimate the likely number of fatalities.")),
+      column(2, br())
+    ),
+    fluidRow(
      column(4,
-            h4("FWS uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
-               This approach combines prior information about eagle collision rates, and exposure across wind farms, with
-               observed estimates of eagle activity at proposed sites to estimate the likely number of fatalities.",
-            br(),br(),
-            "Select one of the wind sites below and click 'Update Distributions' to see how eagle survey information at a given location
-            is integrated with prior information about eagle exposure and collision rates to produce an estimate of fatality"),
-            selectInput("sites", "Choose a Site", choices = c("", levels(Bay16$SITE)), selected = NULL),
-            h4("Alternatively, enter your own survey information",br(), "(Note: the site selector must be empty)"),
-            numericInput("time", label = "Eagle flight time (min)", value = mean(Bay16$FLIGHT_MIN), min = 0),
-            numericInput("effort", label = "Survey Effort (km2*hr)", value = mean(Bay16$EFFORT), min = 0),
-            actionButton("update", "Update Distributions"),
-            h4("Finally, click 'Calculate Fatalities' to produce the combined probability distribution"),
-            actionButton("calculate", "Calculate Fatalities")),
+            h2("Priors?"),
+            h4("Prior distributions represent the current knowledge about a system or parameter.  Priors are expressed as
+               a statistical distribution, indicating the possible values and relative certainty a given parameter may take.  FWS
+               has used the observed collision rates at wind energy sites to create a prior distribution for this part of the fatality equation.")),
      column(8,
-            plotlyOutput("prior"),
-            plotlyOutput("exposure"),
-            plotlyOutput("fatal")
-            )
-     )
+            plotlyOutput("prior"),br())
+     ),
+    fluidRow(
+      column(4,
+             h2("In Action"),
+             h4("Select one of the wind sites below and click 'Update Distributions' to see how eagle survey information at a given location
+            is integrated with prior information about eagle exposure and collision rates to produce an estimate of fatality"),
+             selectInput("sites", "Choose a Site", choices = c("", levels(Bay16$SITE)), selected = NULL),
+             h4("Alternatively, enter your own survey information",br(), "(Note: the site selector must be empty)"),
+             numericInput("time", label = "Eagle flight time (min)", value = mean(Bay16$FLIGHT_MIN), min = 0),
+             numericInput("effort", label = "Survey Effort (km2*hr)", value = mean(Bay16$EFFORT), min = 0),
+             actionButton("update", "Update Distributions")
+             ),
+      column(8, plotlyOutput("exposure"), br())
+    ),
+    fluidRow(
+      column(4,
+             h2("Estimating Eagle Fatality"),
+             h4("Click the 'Calculate Fatalities' button to see the predicted fatalities for the currently selected site,
+                or survey information.  Of particular interest is how the estimated values generated using prior information
+                on exposure rates (purple), compare to estimates produced when only a given site's survey is considered."),
+             actionButton("calculate", "Calculate Fatalities")
+             ),
+      column(8, plotlyOutput("fatal"))
+    )
     )), fluid=TRUE
   ),
   br(),

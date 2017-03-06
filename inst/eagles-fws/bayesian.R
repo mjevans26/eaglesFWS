@@ -47,9 +47,10 @@ bayesian <- function(input, output, session) {
       plot_ly()%>%
         add_trace(x = ~fatality$x, y = ~fatality$y/fatality$n, type = "scatter", mode = "lines", fill = "tozeroy",
                   name = "Using Exposure Prior", line = list(color = "purple"),
-                  text = ~paste("Posterior probability of<br>", round(fatality$x, 2), "fatalities is ", round(fatality$y/fatality$n, 2),sep = ""), hoverinfo = "text")%>%
+                  text = ~paste("Posterior probability of<br>", round(fatality$x, 2), " fatalities is ", round(fatality$y/fatality$n, 2),sep = ""), hoverinfo = "text")%>%
         add_trace(x = ~fatality2$x, y = ~fatality2$y/fatality2$n, type = "scatter", mode = "lines", fill = "tozeroy",
-                  line = list(color = "green"), name = "Using Site Survey Only")%>%
+                  line = list(color = "green"), name = "Using Site Survey Only",
+                  text = ~paste("Posterior probability of<br>", round(fatality2$x, 2), " fatalities is ", round(fatality2$y/fatality2$n, 2), sep = ""), hoverinfo = "text")%>%
         layout(title = "Predicted Annual Eagle Fatalities",
                xaxis = list(title = "Fatalities per Year"),
                yaxis = list(title = "Probability"))
@@ -60,7 +61,7 @@ bayesian <- function(input, output, session) {
   plot_ly()%>%
   add_trace(x = ~collision$x, y = ~collision$y/collision$n, type = "scatter", mode = "lines", fill = "tozeroy",
             name = "Prior", line = list(color = "red"),
-            text = ~paste("Prior probability of Collision Rate = ", round(collision$x, 3), "<br> is ", round(collision$y/collision$n, 2),sep = ""), hoverinfo = "text")%>%
+            text = ~paste("Prior probability of Collision Rate = ", round(collision$x, 3), "<br> is ", round(collision$y/collision$n, 3),sep = ""), hoverinfo = "text")%>%
       layout(title = "Prior Collision Rates",
              xaxis = list(title = "Collision Rate (per Exposure)"),
              yaxis = list(title = "Probability"))
