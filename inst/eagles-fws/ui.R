@@ -22,16 +22,17 @@ body <- dashboardBody(
     fluidRow(
       column(2,br()),
       column(8,
-             h4("Fish and Wildlife Servies uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
+             h4("Fish and Wildlife Services uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
                This approach combines prior information about eagle collision rates and exposure across wind farms, with
-               observed estimates of eagle activity at proposed sites to estimate the likely number of fatalities.")),
+               observed estimates of eagle activity at proposed sites to estimate the likely number of fatalities.",br(),
+                "Fatalities = Collision Rate * Exposure * Project Size")),
       column(2, br())
     ),
     fluidRow(
      column(4,
-            h2("Priors?"),
+            h2("Collision Rate"),
             h4("Prior distributions represent the current knowledge about a system or parameter.  Priors are expressed as
-               a statistical distribution, indicating the possible values and relative certainty a given parameter may take.  FWS
+               a statistical distribution, indicating the possible values and relative certainty a variable may take.  FWS
                has used the observed collision rates at wind energy sites to create a prior distribution for this part of the fatality equation.")),
      column(8,
             plotlyOutput("prior"),br())

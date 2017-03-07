@@ -4,10 +4,17 @@ library(shiny)
 library(shinydashboard)
 
 #Bay16 <- read.csv("C:/Users/mevans/repos/eaglesFWS/BayData.csv", header = TRUE)
-#save(Bay16, file = "C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/data/app_data.RData")
-#Bay16$OBS_MIN <- as.numeric(Bay16$OBS_MIN)
-#Bay16$FLIGHT_MIN <- as.numeric(Bay16$FLIGHT_MIN)
+
+#Bay16$OBS_MIN <- as.character(Bay16$OBS_MIN)%>%
+#  gsub(",","",.)%>%
+#  as.numeric()
+#Bay16$FLIGHT_MIN <- as.character(Bay16$FLIGHT_MIN)%>%
+#  gsub(",","",.)%>%
+#  as.numeric()
 #Bay16$EFFORT <- (Bay16$HECTARES*0.01)*(Bay16$OBS_MIN/60)
+
+#save(Bay16, file = "C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/data/app_data.RData")
+
 load("data/app_data.RData")
 
 prior <- rgamma(10000,shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT))%>%
