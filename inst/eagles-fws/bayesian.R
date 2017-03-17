@@ -39,10 +39,10 @@ bayesian <- function(input, output, session) {
 
   observeEvent(input$calculate,{
     out <- isolate({prediction(10000, a(), b())})
-    fatality <- isolate({density(out$fatality)})
+    fatality <- isolate({density(out$fatality*Bay16$SCALE[Bay16$SITE == input$sites])})
     q80 <- isolate({quantile(out$fatality, c(0.1, 0.9))})
     out2 <- isolate({prediction(10000, a()-mean(Bay16$FLIGHT_MIN), b()-mean(Bay16$EFFORT))})
-    fatality2 <- isolate({density(out2$fatality)})
+    fatality2 <- isolate({density(out2$fatality*Bay16$SCALE[Bay16$SITE == input$sites])})
     q82 <- isolate({quantile(out2$fatality, c(0.1, 0.9))})
 
     output$fatal <- renderPlotly({
