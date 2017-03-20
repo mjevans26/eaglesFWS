@@ -2,8 +2,9 @@ library(dplyr)
 library(plotly)
 library(shiny)
 library(shinydashboard)
-plot(Bay16$RISK_HA, Bay16$COLLISIONS/(Bay16$FLIGHT_MIN/Bay16$EFFORT))
-test <- lm(Bay16$COLLISIONS/(Bay16$FLIGHT_MIN/Bay16$EFFORT)~Bay16$RISK_HA)
+
+#plot(Bay16$RISK_HA, Bay16$COLLISIONS/(Bay16$FLIGHT_MIN/Bay16$EFFORT))
+#test <- lm(Bay16$COLLISIONS/(Bay16$FLIGHT_MIN/Bay16$EFFORT)~Bay16$RISK_HA)
 #Bay16 <- read.csv("C:/Users/mevans/repos/eaglesFWS/BayData.csv", header = TRUE)
 
 #Bay16$OBS_MIN <- as.character(Bay16$OBS_MIN)%>%
@@ -12,13 +13,9 @@ test <- lm(Bay16$COLLISIONS/(Bay16$FLIGHT_MIN/Bay16$EFFORT)~Bay16$RISK_HA)
 #Bay16$FLIGHT_MIN <- as.character(Bay16$FLIGHT_MIN)%>%
 #  gsub(",","",.)%>%
 #  as.numeric()
-<<<<<<< HEAD
 
-=======
 #Bay16$EFFORT <- (Bay16$HECTARES*0.01)*(Bay16$OBS_MIN/60)
 #Bay16$SCALE <- -362.57580 + (33.38994*Bay16$RISK_HA) + (-0.03774*(Bay16$RISK_HA^2))
->>>>>>> 0ce394b978d5b9e3470ad8ab4b6ad5895165e280
-
 
 load("data/app_data.RData")
 Bay16$EFFORT <- (Bay16$HECTARES*0.01*0.2)*(Bay16$OBS_MIN/60)
