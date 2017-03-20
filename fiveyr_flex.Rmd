@@ -1,0 +1,138 @@
+---
+title: "ESA five-year reviews"
+author: "Jacob Malcom, Defenders of Wildlife"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: yeti
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(dplyr)
+library(DT)
+library(ecosscraper)
+library(flexdashboard)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+library(shiny)
+
+load("data/app_data.RData")
+
+```
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+```{r selector, echo = FALSE}
+selectInput("sites", 
+            "Choose a Site", 
+            choices = c("", levels(Bay16$SITE)), 
+            selected = NULL)
+
+cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
+cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
+```
+
+The [U.S. Endangered Species Act](https://www.fws.gov/endangered/laws-policies/)
+requires a review of the status of listed species once every five years. Because
+of budget and personnel constraints, these five-year reviews are often behind 
+schedule. This is a simple tool to view the timeliness of five-year reviews. 
+
+`r hr()`
+
+```{r note, echo = FALSE}
+helpText("Note: To ensure this app loads quickly, we use data collected on 
+17 Dec 2016 rather than real-time  scraping of the Fish and Wildlife Service's 
+website. We will update the data on a regular basis.")
+```
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+### Timeliness
+
+```{r timely, echo = FALSE}
+a <- reactive({mean(Bay16$FLIGHT_MIN)+cur_min()})
+
+b <- reactive({mean(Bay16$EFFORT)+ cur_effort()})
+
+act <- reactive({cur_min()/cur_effort()})
+
+observeEvent(input$update,{
+    act <- isolate({act()})
+    obs <- isolate({density(rgamma(10000, shape = a(), rate = b()))})
+})
+    
+renderPlotly({
+  plot_ly()%>%
+    add_trace(x = ~prior$x, y = prior$y, type = "scatter", mode = "lines", fill = "tozeroy",
+              name = "Prior", line = list(color = "orange"),
+              text = ~paste("Prior probability of Exposure = ", 
+                            round(prior$x, 2), 
+                            "<br> is ",
+                            round(prior$y, 2),
+                            sep = ""), 
+              hoverinfo = "text")%>%
+    add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))), type = "scatter", mode = "lines",
+                  name = "Observed", line = list(color = "green"),
+                  text = ~paste("Observed Exposure = ", 
+                                act, 
+                                sep = ""), 
+                  hoverinfo = "text")%>%
+    add_trace(x = ~obs$x, y = ~obs$y, type = "scatter", mode = "lines", fill = "tozeroy",
+              name = "Posterior", line = list(color = "blue"),
+              text = ~paste("Posterior probability of Exposure = ", 
+                            round(obs$x, 2), 
+                            "<br> is ", 
+                            round(obs$y, 2),
+                            sep = ""), 
+                  hoverinfo = "text")%>%
+    layout(title = "Eagle Exposure",
+          xaxis = list(title = "Exposure (min/km3*hr)"),
+          yaxis = list(title = "Probability")
+        )
+})
+```
+
+> The timeliness of species' 5-year reviews as of Jan, 2017.
+
+### Distribution of 5y Review Dates
+
+```{r histogram, echo = FALSE}
+renderPlot({
+  ggplot(cur_dat(), aes(x = cur_dat()$Review_Date)) +
+    geom_histogram(bins = 12) +
+    geom_vline(xintercept = as.numeric(as.Date("2012-01-01")), colour = "red") +
+    labs(x = "Review Date",
+         y = "# of five-year reviews") +
+    theme_hc()
+})
+```
+
+> The red line marks 01 Jan 2012, approx. five years ago.
+
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Data Table
+
+```{r datatable, echo = FALSE}
+DT::renderDataTable({
+  minitab <- select(cur_dat(), 
+                    Scientific_Name, Common_Name, 
+                    First_Listed, Review_Date)
+  DT::datatable(minitab,
+                options = list(
+                  rownames = FALSE,
+                  pageLength = 12,
+                  lengthMenu = c(10, 12, 15, 20))
+                )
+})
+```
+
+> "Review_Date" is the date of the most recent 5-year review on [ECOS](http://ecos.fws.gov). If the "First_Listed" date is less than 5 years ago, then a species does not need a 5-year review. A missing "Review_Date" means there is no 5-year review on ECOS.
+

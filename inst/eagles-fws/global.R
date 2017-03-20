@@ -11,12 +11,12 @@ library(shinydashboard)
 #Bay16$FLIGHT_MIN <- as.character(Bay16$FLIGHT_MIN)%>%
 #  gsub(",","",.)%>%
 #  as.numeric()
-#Bay16$EFFORT <- (Bay16$HECTARES*0.01)*(Bay16$OBS_MIN/60)
+
 
 #save(Bay16, file = "C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/data/app_data.RData")
 
 load("data/app_data.RData")
-
+Bay16$EFFORT <- (Bay16$HECTARES*0.01*0.2)*(Bay16$OBS_MIN/60)
 prior <- rgamma(10000,shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT))%>%
   density()
 
@@ -26,6 +26,7 @@ obs <- rgamma(10000,shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT))%
 collision <- rbeta(10000, shape1 = 9.38, shape2 = 3224.51)%>%
   density
 
+act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
 #gamma_plot <- function(obs){
 #  curve(dgamma(x, shape = mean(Bay16$flight_time),
 #               rate = mean(Bay16$effort)),0,1)
