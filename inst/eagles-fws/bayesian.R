@@ -1,4 +1,4 @@
-bayesian <- function(input, output, session) {
+exposure <- function(input, output, session) {
   cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
   cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
   cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})

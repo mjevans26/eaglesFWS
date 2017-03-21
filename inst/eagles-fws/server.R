@@ -1,9 +1,11 @@
 library(shiny)
 
-source("bayesian.R")
+source("exposure.R")
+source("fatality.R")
 
 shinyServer(function(input,output, session){
-  bayesian(input, output, session)
+  exposure(input, output, session)
+  fatality(input, output, session)
 
   output$defenders <- renderImage({
     width <- session$clientData$output_defenders_width
