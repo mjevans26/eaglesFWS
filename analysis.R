@@ -39,7 +39,8 @@ output$states <- renderPlotly({
 })
 
 plot_ly(Bay16)%>%
-  add_trace(x = ~EFFORT, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers")
+  add_trace(x = ~EFFORT, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
+            size = ~ (UQ_F-LQ_F)/MN_F)
 
 plot_ly(Bay16)%>%
-  add_trace(x = ~EFFORT, y = ~ UQ_F-LQ_F/MN_F, type = "scatter", mode = "markers")
+  add_trace(x = ~EFFORT, y = ~ (UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers")
