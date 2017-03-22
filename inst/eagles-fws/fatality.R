@@ -29,7 +29,7 @@ fatality <- function(input, output, session) {
         plot_ly()%>%
           add_trace(x = ~fatality$x, y = ~fatality$y, type = "scatter", mode = "lines",
                     fill = "tozeroy",
-                    name = "Using Exposure Prior", line = list(color = vir_col(3)[3]),
+                    name = "Incl. Prior Exposure", line = list(color = vir_col(3)[3]),
                     text = ~paste("Posterior probability of<br>",
                                   round(fatality$x, 2),
                                   " fatalities is ",
@@ -48,7 +48,9 @@ fatality <- function(input, output, session) {
           layout(##title = "Predicted Annual Eagle Fatalities",
                  xaxis = list(title = "Fatalities per Year",
                               range = c(0,20)),
-                 yaxis = list(title = "Probability"))
+                 yaxis = list(title = "Probability Density"),
+                 legend = list(x = 0.7,
+                               y = 1))
       })
     }
   })

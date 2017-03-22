@@ -11,7 +11,10 @@ exposure <- function(input, output, session) {
 
   observeEvent(input$update,{
     act <- isolate({act()})
-    obs <- isolate({density(rgamma(10000, shape = a(), rate = b()))})
+    obs <- isolate({curve(dgamma(x, shape = a(), rate = b()),
+                          from = quantile(rgamma(1000, shape = a(), rate = b()) , probs = 0),
+                          to = quantile(rgamma(1000, shape = a(), rate = b()) , probs = 1))
+        })
 
     output$exposure <- renderPlotly({
       plot_ly()%>%
@@ -33,7 +36,7 @@ exposure <- function(input, output, session) {
                   hoverinfo = "text")%>%
         add_trace(x = ~obs$x, y = ~obs$y,
                   type = "scatter", mode = "lines", fill = "tozeroy",
-                  name = "Posterior", line = list(color = vir_col(3)[3]),
+                  name = "Combined", line = list(color = vir_col(3)[3]),
                   text = ~paste("Posterior probability of Exposure = ",
                                 round(obs$x, 2),
                                 "<br> is ",
@@ -43,7 +46,7 @@ exposure <- function(input, output, session) {
         layout(#title = "Eagle Exposure",
                xaxis = list(title = "Exposure (min/km3*hr)",
                             range = c(0,3)),
-               yaxis = list(title = "Probability"))
+               yaxis = list(title = "Probability Density"))
     })
 
   })

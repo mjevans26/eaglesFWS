@@ -2,6 +2,7 @@ library(shiny)
 
 source("exposure.R")
 source("fatality.R")
+source("helper_fxns.R")
 
 shinyServer(function(input,output, session){
   exposure(input, output, session)

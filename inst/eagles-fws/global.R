@@ -17,16 +17,21 @@ library(shinydashboard)
 #Bay16$EFFORT <- (Bay16$HECTARES*0.01)*(Bay16$OBS_MIN/60)
 #Bay16$SCALE <- -362.57580 + (33.38994*Bay16$RISK_HA) + (-0.03774*(Bay16$RISK_HA^2))
 
-load("data/app_data.RData")
+load("app_data.RData")
 Bay16$EFFORT <- (Bay16$HECTARES*0.01*0.2)*(Bay16$OBS_MIN/60)
-prior <- rgamma(10000,shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT))%>%
-  density()
 
-obs <- rgamma(10000,shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT))%>%
-  density()
+prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT)),
+               from = 0.5,
+               to = 2)
 
-collision <- rbeta(10000, shape1 = 9.38, shape2 = 3224.51)%>%
-  density
+
+#obs <- rgamma(10000,shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFORT))%>%
+#  density()
+
+#collision <- data.frame(y = dbeta(seq(0,0.01,0.0001), shape1 = 9.38, shape2 = 3224.51),
+#                        x = seq(0, 0.01, 0.0001))
+
+collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), from = 0, to = 0.01)
 
 act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
 #gamma_plot <- function(obs){
