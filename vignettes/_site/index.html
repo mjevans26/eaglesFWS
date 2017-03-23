@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Defenders of Wildlife" />
+
+<meta name="date" content="2017-03-17" />
+
+<title>The Importance of Properly Funding the ESA</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.7/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.7/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
+<script src="site_libs/htmlwidgets-0.8/htmlwidgets.js"></script>
+<link href="site_libs/plotlyjs-1.16.3/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotlyjs-1.16.3/plotly-latest.min.js"></script>
+<script src="site_libs/plotly-binding-4.5.6/plotly.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+<link rel="stylesheet" href="custom.css" type="text/css" />
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-inverse  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">ESA Funding</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="https://cci-dev.org">CCI-dev</a>
+</li>
+<li>
+  <a href="mailto:esa@defenders.org">
+    <span class="fa fa-question-circle fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/mjevans26/ESApprops">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://www.defenders.org">Defenders</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">The Importance of Properly Funding the ESA</h1>
+<h4 class="author"><em>Defenders of Wildlife</em></h4>
+<h4 class="date"><em>2017-03-17</em></h4>
+
+</div>
+
+
+<div id="overview" class="section level1">
+<h1>Overview</h1>
+<p>Since 1973, the Endangered Species Act (ESA) has been the most important U.S. law protecting plants and animals at risk of extinction. The ESA conserves species by regulating activities that may harm species and by facilitating species recovery. The U.S. Fish and Wildlife Service (FWS) is responsible for conserving the majority of listed species under the ESA, a function that has been impeded by inadequate funding from Congress.</p>
+<figure class="figure">
+<img src="Island_Fox.jpg" class="figure-img img-fluid rounded" alt="Island fox">
+<figcaption class="figure-caption">
+Photo courtesy of National Park Service
+</figcaption>
+</figure>
+<p>Several fox species (<em>Urocyon littoralis</em>) of the Channel Islands were recovered and delisted in 2016. Success stories such as these highlight the importance of properly funding the ESA.</p>
+</div>
+<div id="funding-needs" class="section level1">
+<h1>Funding Needs</h1>
+<div id="species-recovery-has-been-chronically-underfunded" class="section level3">
+<h3>Species Recovery Has Been Chronically Underfunded</h3>
+<p>Congress has provided only a small fraction of the funds needed for recovery. Data from Gerber (2016) shown here illustrate this shortchanging. From 1980 to 2014, the vast majority of listed species with recovery plans were underfunded - receiving less than 90% of the amount needed for recovery. Because funding is correlated with improvement in species status, only 15% of species improved in status from 1989 - 2011.</p>
+<div class="container-fluid">
+<div class="row">
+<div class="col-sm-6">
+<div id="htmlwidget-0a2efcb6a5deabe88c82" style="width:100%;height:400px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-0a2efcb6a5deabe88c82">{"x":{"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","font":{"color":"black"},"showlegend":false,"legend":{"x":0.95,"y":0.95,"bordercolor":"black","borderwidth":1},"xaxis":{"domain":[0,1],"showgrid":false,"zeroline":false,"showticklabels":false},"yaxis":{"domain":[0,1],"showgrid":false,"zeroline":false,"showticklabels":false}},"source":"A","config":{"modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"modeBarButtonsToRemove":["sendDataToCloud"]},"data":[{"values":[102,57,965],"labels":["Under (<0.90)","Adequate","Over (>2x)"],"type":"pie","name":"Funding","marker":{"fillcolor":"rgba(31,119,180,1)","color":"rgba(31,119,180,1)","colors":["#FDE725","#21908C","#440154"],"line":{"color":"transparent"}},"textfont":{"size":16},"legendgroup":"Funding","textinfo":"percent","textposition":"outside","text":["102 Species were<br>Adequately funded","57 Species were<br>Over funded","965 Species were<br>Under funded"],"hoverinfo":"text"}],"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":[]}</script>
+</div>
+<div class="col-sm-6">
+<div id="htmlwidget-17ecc8d2ce0e85f1b22f" style="width:100%;height:400px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-17ecc8d2ce0e85f1b22f">{"x":{"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","font":{"color":"black"},"barmode":"stack","legend":{"x":0.6,"y":0.95,"bordercolor":"black","borderwidth":1},"yaxis":{"domain":[0,1],"title":"Number of Species"},"xaxis":{"domain":[0,1],"title":"Recovery Status (1989 - 2011)","tickmode":"auto","tickangle":0,"type":"category","categoryorder":"array","categoryarray":["Declined","Improved","No Change"]}},"source":"A","config":{"modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"modeBarButtonsToRemove":["sendDataToCloud"]},"data":[{"x":["Declined","Improved","No Change"],"y":[67,22,13],"type":"bar","marker":{"fillcolor":"rgba(253,231,37,0.5)","color":"rgba(253,231,37,1)","line":{"color":"black","width":2}},"text":["67 Adequately funded species Declined","22 Adequately funded species Improved","13 Adequately funded species No Change"],"hoverinfo":"text","name":"Adequately funded","xaxis":"x","yaxis":"y"},{"x":["Declined","Improved","No Change"],"y":[30,18,9],"type":"bar","marker":{"fillcolor":"rgba(33,144,140,0.5)","color":"rgba(33,144,140,1)","line":{"color":"black","width":2}},"text":["30 Over funded species Declined","18 Over funded species Improved","9 Over funded species No Change"],"hoverinfo":"text","name":"Over funded","xaxis":"x","yaxis":"y"},{"x":["Declined","Improved","No Change"],"y":[660,130,175],"type":"bar","marker":{"fillcolor":"rgba(68,1,84,0.5)","color":"rgba(68,1,84,1)","line":{"color":"black","width":2}},"text":["660 Under funded species Declined","130 Under funded species Improved","175 Under funded species No Change"],"hoverinfo":"text","name":"Under funded","xaxis":"x","yaxis":"y"}],"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":[]}</script>
+</div>
+</div>
+</div>
+<p style="font-size:small">
+Source: <a href="http://www.pnas.org/content/113/13/3563.full?tab=ds">Gerber, LR (2016). PNAS 113(13): 3563-3566</a>
+</p>
+</div>
+</div>
+<div id="funding-trends" class="section level1">
+<h1>Funding Trends</h1>
+<div id="funding-has-not-kept-pace-with-species-listings" class="section level3">
+<h3>Funding Has Not Kept Pace with Species Listings</h3>
+<p>Not only has Congress underfunded recovery for decades, but the average dollar per species has decreased since 2010. This drop has occurred across all endangered species programs at FWS. This decline is the result of the ESA budget consistently decreasing, combined with the continued increase in the number of listed species.</p>
+<div class="container-fluid">
+<div class="row">
+<div class="col-sm-12">
+<div id="htmlwidget-b30755fe4932de969713" style="width:100%;height:400px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-b30755fe4932de969713">{"x":{"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"compare","font":{"color":"black"},"title":"Timeline of ESA Appropriations","xaxis":{"domain":[0,1],"title":"Year","range":[1983,2016]},"yaxis":{"domain":[0,1],"title":"Appropriations per Species (2016 Dollars)","rangemode":"tozero","overlaying":"y2"},"yaxis2":{"anchor":"x","side":"right","range":[0,2000],"showticklabels":false},"legend":{"bgcolor":"none","orientation":"h","x":0,"tracegroupgap":1},"updatemenus":[{"type":"buttons","title":"butt","y":0.95,"x":0.1,"buttons":[{"method":"update","args":["visible",[true,true,false,true,false,true,false,true,false]],"label":"per Species"},{"method":"update","args":["visible",[true,false,true,false,true,false,true,false,true]],"label":"Total"}]}]},"source":"A","config":{"modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"modeBarButtonsToRemove":["sendDataToCloud"]},"data":[{"x":[1973,1974,1975,1976,1977,1978,1979,1980,1981,1982,1983,1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016],"y":[110,110,118,151,169,205,236,250,254,264,271,298,354,387,447,493,524,560,638,713,779,906,924,1014,1089,1144,1166,1205,1215,1226,1227,1232,1239,1251,1251,1252,1257,1310,1321,1362,1445,1479,1506,1530],"type":"scatter","mode":"lines","name":"Listed Species","yaxis":"y2","text":["110 listed species in 1973","110 listed species in 1974","118 listed species in 1975","151 listed species in 1976","169 listed species in 1977","205 listed species in 1978","236 listed species in 1979","250 listed species in 1980","254 listed species in 1981","264 listed species in 1982","271 listed species in 1983","298 listed species in 1984","354 listed species in 1985","387 listed species in 1986","447 listed species in 1987","493 listed species in 1988","524 listed species in 1989","560 listed species in 1990","638 listed species in 1991","713 listed species in 1992","779 listed species in 1993","906 listed species in 1994","924 listed species in 1995","1014 listed species in 1996","1089 listed species in 1997","1144 listed species in 1998","1166 listed species in 1999","1205 listed species in 2000","1215 listed species in 2001","1226 listed species in 2002","1227 listed species in 2003","1232 listed species in 2004","1239 listed species in 2005","1251 listed species in 2006","1251 listed species in 2007","1252 listed species in 2008","1257 listed species in 2009","1310 listed species in 2010","1321 listed species in 2011","1362 listed species in 2012","1445 listed species in 2013","1479 listed species in 2014","1506 listed species in 2015","1530 listed species in 2016"],"hoverinfo":"text","fill":"tozeroy","line":{"fillcolor":"rgba(31,119,180,1)","color":"grey"},"xaxis":"x"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016],"y":[34757.258851792,37290.1728554124,14939.8093168605,31209.451901566,31051.5055266126,31237.5523342595,34987.0368387429,41409.5581384546,45884.2412412875,43029.9780940629,56902.9233794702,68072.1202329102,55382.0760433925,54742.442256,54967.2015067308,82113.4000862641,66734.2721098357,67127.0747552963,69628.7850694772,64384.2395861695,70436.2706536851,69703.4797143584,70411.3962844684,61323.6014357314,63620.6311422013,66767.9363618735,72086.8521271382,65993.7231497805,63921.959648141,58422.5498529176,53467.2306116051,52808.9822493068,53605.2287581699],"type":"scatter","mode":"lines","name":"Recovery<br>budget","line":{"fillcolor":"rgba(255,127,14,1)","color":"#440154"},"text":["$ 34,757.26 per species budgeted for<br>Recovery in 1984","$ 37,290.17 per species budgeted for<br>Recovery in 1985","$ 14,939.81 per species budgeted for<br>Recovery in 1986","$ 31,209.45 per species budgeted for<br>Recovery in 1987","$ 31,051.51 per species budgeted for<br>Recovery in 1988","$ 31,237.55 per species budgeted for<br>Recovery in 1989","$ 34,987.04 per species budgeted for<br>Recovery in 1990","$ 41,409.56 per species budgeted for<br>Recovery in 1991","$ 45,884.24 per species budgeted for<br>Recovery in 1992","$ 43,029.98 per species budgeted for<br>Recovery in 1993","$ 56,902.92 per species budgeted for<br>Recovery in 1994","$ 68,072.12 per species budgeted for<br>Recovery in 1995","$ 55,382.08 per species budgeted for<br>Recovery in 1996","$ 54,742.44 per species budgeted for<br>Recovery in 1997","$ 54,967.20 per species budgeted for<br>Recovery in 1998","$ 82,113.40 per species budgeted for<br>Recovery in 1999","$ 66,734.27 per species budgeted for<br>Recovery in 2000","$ 67,127.07 per species budgeted for<br>Recovery in 2001","$ 69,628.79 per species budgeted for<br>Recovery in 2002","$ 64,384.24 per species budgeted for<br>Recovery in 2003","$ 70,436.27 per species budgeted for<br>Recovery in 2004","$ 69,703.48 per species budgeted for<br>Recovery in 2005","$ 70,411.40 per species budgeted for<br>Recovery in 2006","$ 61,323.60 per species budgeted for<br>Recovery in 2007","$ 63,620.63 per species budgeted for<br>Recovery in 2008","$ 66,767.94 per species budgeted for<br>Recovery in 2009","$ 72,086.85 per species budgeted for<br>Recovery in 2010","$ 65,993.72 per species budgeted for<br>Recovery in 2011","$ 63,921.96 per species budgeted for<br>Recovery in 2012","$ 58,422.55 per species budgeted for<br>Recovery in 2013","$ 53,467.23 per species budgeted for<br>Recovery in 2014","$ 52,808.98 per species budgeted for<br>Recovery in 2015","$ 53,605.23 per species budgeted for<br>Recovery in 2016"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016],"y":[10357663.137834,13200721.190816,5781706.205625,13950625,15308392.22462,16368477.423152,19592740.629696,26419298.092334,32715464.005038,33520352.935275,51554048.5818,62898639.095209,56157425.108,59614519.616784,62882478.5237,95744224.500584,80414797.892352,81559395.827685,85364890.495179,78999461.97223,86777485.44534,86362611.36609,88084656.75187,76715825.3961,79653030.190036,83927296.006875,94433776.286551,87177708.28086,87061709.040768,84420584.537466,79078034.074564,79530327.267456,82016000],"type":"scatter","mode":"lines","visible":false,"name":"Recovery<br>budget","line":{"fillcolor":"rgba(44,160,44,1)","color":"#440154"},"text":["$ 10,357,663 budgeted for<br>Recovery in 1984","$ 13,200,721 budgeted for<br>Recovery in 1985","$  5,781,706 budgeted for<br>Recovery in 1986","$ 13,950,625 budgeted for<br>Recovery in 1987","$ 15,308,392 budgeted for<br>Recovery in 1988","$ 16,368,477 budgeted for<br>Recovery in 1989","$ 19,592,741 budgeted for<br>Recovery in 1990","$ 26,419,298 budgeted for<br>Recovery in 1991","$ 32,715,464 budgeted for<br>Recovery in 1992","$ 33,520,353 budgeted for<br>Recovery in 1993","$ 51,554,049 budgeted for<br>Recovery in 1994","$ 62,898,639 budgeted for<br>Recovery in 1995","$ 56,157,425 budgeted for<br>Recovery in 1996","$ 59,614,520 budgeted for<br>Recovery in 1997","$ 62,882,479 budgeted for<br>Recovery in 1998","$ 95,744,225 budgeted for<br>Recovery in 1999","$ 80,414,798 budgeted for<br>Recovery in 2000","$ 81,559,396 budgeted for<br>Recovery in 2001","$ 85,364,890 budgeted for<br>Recovery in 2002","$ 78,999,462 budgeted for<br>Recovery in 2003","$ 86,777,485 budgeted for<br>Recovery in 2004","$ 86,362,611 budgeted for<br>Recovery in 2005","$ 88,084,657 budgeted for<br>Recovery in 2006","$ 76,715,825 budgeted for<br>Recovery in 2007","$ 79,653,030 budgeted for<br>Recovery in 2008","$ 83,927,296 budgeted for<br>Recovery in 2009","$ 94,433,776 budgeted for<br>Recovery in 2010","$ 87,177,708 budgeted for<br>Recovery in 2011","$ 87,061,709 budgeted for<br>Recovery in 2012","$ 84,420,585 budgeted for<br>Recovery in 2013","$ 79,078,034 budgeted for<br>Recovery in 2014","$ 79,530,327 budgeted for<br>Recovery in 2015","$ 82,016,000 budgeted for<br>Recovery in 2016"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015],"y":[22048.794982698,18030.3436053107,34324.5676152326,15179.2505592841,12326.2307995538,12081.8887001679,12173.5626858786,14631.9698587978,19619.1691012763,20276.5234427792,25918.2478179603,31360.9349905779,24272.5224785247,24789.890404,30846.8788860664,33839.7626670257,37625.6442057826,47959.9305722222,49800.8291721754,51077.5575028036,48903.4447572143,48014.2947641671,45941.3255140648,45925.4470170264,46351.7775180256,47865.2016597852,50109.0605738954,50277.5656846177,47044.8516633656,44218.9649016235,42785.7408620352,42394.3970390438],"type":"scatter","mode":"lines","name":"Consultation<br>budget","line":{"fillcolor":"rgba(214,39,40,1)","color":"#31688E"},"text":["$ 22,048.79 per species budgeted for<br>Consultation in 1984","$ 18,030.34 per species budgeted for<br>Consultation in 1985","$ 34,324.57 per species budgeted for<br>Consultation in 1986","$ 15,179.25 per species budgeted for<br>Consultation in 1987","$ 12,326.23 per species budgeted for<br>Consultation in 1988","$ 12,081.89 per species budgeted for<br>Consultation in 1989","$ 12,173.56 per species budgeted for<br>Consultation in 1990","$ 14,631.97 per species budgeted for<br>Consultation in 1991","$ 19,619.17 per species budgeted for<br>Consultation in 1992","$ 20,276.52 per species budgeted for<br>Consultation in 1993","$ 25,918.25 per species budgeted for<br>Consultation in 1994","$ 31,360.93 per species budgeted for<br>Consultation in 1995","$ 24,272.52 per species budgeted for<br>Consultation in 1996","$ 24,789.89 per species budgeted for<br>Consultation in 1997","$ 30,846.88 per species budgeted for<br>Consultation in 1998","$ 33,839.76 per species budgeted for<br>Consultation in 1999","$ 37,625.64 per species budgeted for<br>Consultation in 2000","$ 47,959.93 per species budgeted for<br>Consultation in 2001","$ 49,800.83 per species budgeted for<br>Consultation in 2002","$ 51,077.56 per species budgeted for<br>Consultation in 2003","$ 48,903.44 per species budgeted for<br>Consultation in 2004","$ 48,014.29 per species budgeted for<br>Consultation in 2005","$ 45,941.33 per species budgeted for<br>Consultation in 2006","$ 45,925.45 per species budgeted for<br>Consultation in 2007","$ 46,351.78 per species budgeted for<br>Consultation in 2008","$ 47,865.20 per species budgeted for<br>Consultation in 2009","$ 50,109.06 per species budgeted for<br>Consultation in 2010","$ 50,277.57 per species budgeted for<br>Consultation in 2011","$ 47,044.85 per species budgeted for<br>Consultation in 2012","$ 44,218.96 per species budgeted for<br>Consultation in 2013","$ 42,785.74 per species budgeted for<br>Consultation in 2014","$ 42,394.40 per species budgeted for<br>Consultation in 2015"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015],"y":[6570540.904844,6382741.63628,13283607.667095,6785125,6076831.78418,6330909.678888,6817195.104092,9335196.769913,13988467.56921,15795411.761925,23481932.523072,28977503.931294,24612337.793224,26996190.649956,35288829.44566,39457163.269752,45338901.267968,58271315.64525,61055816.565087,62672163.05594,60249043.940888,59489711.212803,57472598.218095,57452734.2183,58032425.452568,60166558.48635,65642869.351803,66416664.26938,64075087.965504,63896404.282846,63280110.73495,63845961.9408],"type":"scatter","mode":"lines","visible":false,"name":"Consultation<br>budget","line":{"fillcolor":"rgba(148,103,189,1)","color":"#31688E"},"text":["$  6,570,541 budgeted for<br>Consultation in 1984","$  6,382,742 budgeted for<br>Consultation in 1985","$ 13,283,608 budgeted for<br>Consultation in 1986","$  6,785,125 budgeted for<br>Consultation in 1987","$  6,076,832 budgeted for<br>Consultation in 1988","$  6,330,910 budgeted for<br>Consultation in 1989","$  6,817,195 budgeted for<br>Consultation in 1990","$  9,335,197 budgeted for<br>Consultation in 1991","$ 13,988,468 budgeted for<br>Consultation in 1992","$ 15,795,412 budgeted for<br>Consultation in 1993","$ 23,481,933 budgeted for<br>Consultation in 1994","$ 28,977,504 budgeted for<br>Consultation in 1995","$ 24,612,338 budgeted for<br>Consultation in 1996","$ 26,996,191 budgeted for<br>Consultation in 1997","$ 35,288,829 budgeted for<br>Consultation in 1998","$ 39,457,163 budgeted for<br>Consultation in 1999","$ 45,338,901 budgeted for<br>Consultation in 2000","$ 58,271,316 budgeted for<br>Consultation in 2001","$ 61,055,817 budgeted for<br>Consultation in 2002","$ 62,672,163 budgeted for<br>Consultation in 2003","$ 60,249,044 budgeted for<br>Consultation in 2004","$ 59,489,711 budgeted for<br>Consultation in 2005","$ 57,472,598 budgeted for<br>Consultation in 2006","$ 57,452,734 budgeted for<br>Consultation in 2007","$ 58,032,425 budgeted for<br>Consultation in 2008","$ 60,166,558 budgeted for<br>Consultation in 2009","$ 65,642,869 budgeted for<br>Consultation in 2010","$ 66,416,664 budgeted for<br>Consultation in 2011","$ 64,075,088 budgeted for<br>Consultation in 2012","$ 63,896,404 budgeted for<br>Consultation in 2013","$ 63,280,111 budgeted for<br>Consultation in 2014","$ 63,845,962 budgeted for<br>Consultation in 2015"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015],"y":[99936.8649534027,104937.233538395,95307.4464076744,88166.1073825503,77947.4742838134,78153.3243224886,80247.8877567357,89125.2813764859,86276.0804069902,84061.2549878434,109316.538712225,120765.485256436,91489.6723065325,93067.4001266667,99915.7696535795,137711.467793022,125971.801554961,135686.777144294,137620.198642909,134450.416383348,142100.676856357,142872.679888538,141477.497376563,131285.50978753,134787.150405406,141435.215700895,151499.916408596,142556.972527812,135828.181652159,125897.823764141,118528.667101974,117261.343343278],"type":"scatter","mode":"lines","name":"Endangered Species<br>budget","line":{"fillcolor":"rgba(140,86,75,1)","color":"#35B779"},"text":["$  99,936.86 per species budgeted for<br>Endangered Species Programs in 1984","$ 104,937.23 per species budgeted for<br>Endangered Species Programs in 1985","$  95,307.45 per species budgeted for<br>Endangered Species Programs in 1986","$  88,166.11 per species budgeted for<br>Endangered Species Programs in 1987","$  77,947.47 per species budgeted for<br>Endangered Species Programs in 1988","$  78,153.32 per species budgeted for<br>Endangered Species Programs in 1989","$  80,247.89 per species budgeted for<br>Endangered Species Programs in 1990","$  89,125.28 per species budgeted for<br>Endangered Species Programs in 1991","$  86,276.08 per species budgeted for<br>Endangered Species Programs in 1992","$  84,061.25 per species budgeted for<br>Endangered Species Programs in 1993","$ 109,316.54 per species budgeted for<br>Endangered Species Programs in 1994","$ 120,765.49 per species budgeted for<br>Endangered Species Programs in 1995","$  91,489.67 per species budgeted for<br>Endangered Species Programs in 1996","$  93,067.40 per species budgeted for<br>Endangered Species Programs in 1997","$  99,915.77 per species budgeted for<br>Endangered Species Programs in 1998","$ 137,711.47 per species budgeted for<br>Endangered Species Programs in 1999","$ 125,971.80 per species budgeted for<br>Endangered Species Programs in 2000","$ 135,686.78 per species budgeted for<br>Endangered Species Programs in 2001","$ 137,620.20 per species budgeted for<br>Endangered Species Programs in 2002","$ 134,450.42 per species budgeted for<br>Endangered Species Programs in 2003","$ 142,100.68 per species budgeted for<br>Endangered Species Programs in 2004","$ 142,872.68 per species budgeted for<br>Endangered Species Programs in 2005","$ 141,477.50 per species budgeted for<br>Endangered Species Programs in 2006","$ 131,285.51 per species budgeted for<br>Endangered Species Programs in 2007","$ 134,787.15 per species budgeted for<br>Endangered Species Programs in 2008","$ 141,435.22 per species budgeted for<br>Endangered Species Programs in 2009","$ 151,499.92 per species budgeted for<br>Endangered Species Programs in 2010","$ 142,556.97 per species budgeted for<br>Endangered Species Programs in 2011","$ 135,828.18 per species budgeted for<br>Endangered Species Programs in 2012","$ 125,897.82 per species budgeted for<br>Endangered Species Programs in 2013","$ 118,528.67 per species budgeted for<br>Endangered Species Programs in 2014","$ 117,261.34 per species budgeted for<br>Endangered Species Programs in 2015"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015],"y":[29781185.756114,37147780.672592,36883981.75977,39410250,38428104.82192,40952341.944984,44938817.143772,56861929.518198,61514845.330184,65483717.63553,99040784.073276,111587308.376947,92770527.718824,101350398.73794,114303640.483695,160571571.446664,151796020.873728,164859434.230317,168722363.536206,164970660.902368,175068033.887032,177019250.381898,176988349.21808,164238172.7442,168753512.307568,177784066.136025,198464890.495261,188317760.70924,184997983.41024,181922355.339184,175303898.643819,176595583.074976],"type":"scatter","mode":"lines","name":"Endangered Species<br>budget","line":{"fillcolor":"rgba(227,119,194,1)","color":"#35B779"},"visible":false,"text":["$  29,781,186 budgeted for<br>Endangered Species Programs in 1984","$  37,147,781 budgeted for<br>Endangered Species Programs in 1985","$  36,883,982 budgeted for<br>Endangered Species Programs in 1986","$  39,410,250 budgeted for<br>Endangered Species Programs in 1987","$  38,428,105 budgeted for<br>Endangered Species Programs in 1988","$  40,952,342 budgeted for<br>Endangered Species Programs in 1989","$  44,938,817 budgeted for<br>Endangered Species Programs in 1990","$  56,861,930 budgeted for<br>Endangered Species Programs in 1991","$  61,514,845 budgeted for<br>Endangered Species Programs in 1992","$  65,483,718 budgeted for<br>Endangered Species Programs in 1993","$  99,040,784 budgeted for<br>Endangered Species Programs in 1994","$ 111,587,308 budgeted for<br>Endangered Species Programs in 1995","$  92,770,528 budgeted for<br>Endangered Species Programs in 1996","$ 101,350,399 budgeted for<br>Endangered Species Programs in 1997","$ 114,303,640 budgeted for<br>Endangered Species Programs in 1998","$ 160,571,571 budgeted for<br>Endangered Species Programs in 1999","$ 151,796,021 budgeted for<br>Endangered Species Programs in 2000","$ 164,859,434 budgeted for<br>Endangered Species Programs in 2001","$ 168,722,364 budgeted for<br>Endangered Species Programs in 2002","$ 164,970,661 budgeted for<br>Endangered Species Programs in 2003","$ 175,068,034 budgeted for<br>Endangered Species Programs in 2004","$ 177,019,250 budgeted for<br>Endangered Species Programs in 2005","$ 176,988,349 budgeted for<br>Endangered Species Programs in 2006","$ 164,238,173 budgeted for<br>Endangered Species Programs in 2007","$ 168,753,512 budgeted for<br>Endangered Species Programs in 2008","$ 177,784,066 budgeted for<br>Endangered Species Programs in 2009","$ 198,464,890 budgeted for<br>Endangered Species Programs in 2010","$ 188,317,761 budgeted for<br>Endangered Species Programs in 2011","$ 184,997,983 budgeted for<br>Endangered Species Programs in 2012","$ 181,922,355 budgeted for<br>Endangered Species Programs in 2013","$ 175,303,899 budgeted for<br>Endangered Species Programs in 2014","$ 176,595,583 budgeted for<br>Endangered Species Programs in 2015"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015],"y":[242505.558395275,256639.284462938,213141.279587209,223457.774049217,204127.845648621,200112.783227905,194236.102329114,231069.557042951,222461.589516637,203442.905650205,231394.434459126,236074.435251311,188945.435654233,181360.236148,188427.722112793,228541.113898401,220736.259537474,235460.260780331,240490.032981372,225766.653423581,243747.564514662,247979.581502182,246030.217905488,225847.044957314,235883.782046019,247348.009100835,262728.900985645,244807.063284512,231368.376032423,212328.896713341,195613.904724602,193437.05992221],"type":"scatter","mode":"lines","legendgroup":"2","text":["$ 242,505.6 per species budgeted for <br> Ecolocial Services in 1984","$ 256,639.3 per species budgeted for <br> Ecolocial Services in 1985","$ 213,141.3 per species budgeted for <br> Ecolocial Services in 1986","$ 223,457.8 per species budgeted for <br> Ecolocial Services in 1987","$ 204,127.8 per species budgeted for <br> Ecolocial Services in 1988","$ 200,112.8 per species budgeted for <br> Ecolocial Services in 1989","$ 194,236.1 per species budgeted for <br> Ecolocial Services in 1990","$ 231,069.6 per species budgeted for <br> Ecolocial Services in 1991","$ 222,461.6 per species budgeted for <br> Ecolocial Services in 1992","$ 203,442.9 per species budgeted for <br> Ecolocial Services in 1993","$ 231,394.4 per species budgeted for <br> Ecolocial Services in 1994","$ 236,074.4 per species budgeted for <br> Ecolocial Services in 1995","$ 188,945.4 per species budgeted for <br> Ecolocial Services in 1996","$ 181,360.2 per species budgeted for <br> Ecolocial Services in 1997","$ 188,427.7 per species budgeted for <br> Ecolocial Services in 1998","$ 228,541.1 per species budgeted for <br> Ecolocial Services in 1999","$ 220,736.3 per species budgeted for <br> Ecolocial Services in 2000","$ 235,460.3 per species budgeted for <br> Ecolocial Services in 2001","$ 240,490.0 per species budgeted for <br> Ecolocial Services in 2002","$ 225,766.7 per species budgeted for <br> Ecolocial Services in 2003","$ 243,747.6 per species budgeted for <br> Ecolocial Services in 2004","$ 247,979.6 per species budgeted for <br> Ecolocial Services in 2005","$ 246,030.2 per species budgeted for <br> Ecolocial Services in 2006","$ 225,847.0 per species budgeted for <br> Ecolocial Services in 2007","$ 235,883.8 per species budgeted for <br> Ecolocial Services in 2008","$ 247,348.0 per species budgeted for <br> Ecolocial Services in 2009","$ 262,728.9 per species budgeted for <br> Ecolocial Services in 2010","$ 244,807.1 per species budgeted for <br> Ecolocial Services in 2011","$ 231,368.4 per species budgeted for <br> Ecolocial Services in 2012","$ 212,328.9 per species budgeted for <br> Ecolocial Services in 2013","$ 195,613.9 per species budgeted for <br> Ecolocial Services in 2014","$ 193,437.1 per species budgeted for <br> Ecolocial Services in 2015"],"hoverinfo":"text","name":"Ecological Services<br>budget","line":{"fillcolor":"rgba(127,127,127,1)","color":"#FDE725"},"xaxis":"x","yaxis":"y"},{"x":[1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015],"y":[72266656.401792,90850306.69988,82485675.20025,99885625,100635027.90477,104859098.411422,108772217.304304,147422377.393403,158615113.325362,158482023.50151,209643357.619968,218132778.172211,191590671.753392,197501297.165172,215561314.097035,266478938.805536,265987192.742656,286084216.848102,294840780.435162,277015683.750734,300296999.482064,307246701.481204,307783802.599765,282534653.2416,295326495.121616,310916447.43975,344174860.291195,323390130.59884,315123728.15616,306815255.750778,289312965.087687,291316212.242848],"type":"scatter","mode":"lines","visible":false,"text":["$  72,266,656 budgeted for <br> Ecolocial Services in 1984","$  90,850,307 budgeted for <br> Ecolocial Services in 1985","$  82,485,675 budgeted for <br> Ecolocial Services in 1986","$  99,885,625 budgeted for <br> Ecolocial Services in 1987","$ 100,635,028 budgeted for <br> Ecolocial Services in 1988","$ 104,859,098 budgeted for <br> Ecolocial Services in 1989","$ 108,772,217 budgeted for <br> Ecolocial Services in 1990","$ 147,422,377 budgeted for <br> Ecolocial Services in 1991","$ 158,615,113 budgeted for <br> Ecolocial Services in 1992","$ 158,482,024 budgeted for <br> Ecolocial Services in 1993","$ 209,643,358 budgeted for <br> Ecolocial Services in 1994","$ 218,132,778 budgeted for <br> Ecolocial Services in 1995","$ 191,590,672 budgeted for <br> Ecolocial Services in 1996","$ 197,501,297 budgeted for <br> Ecolocial Services in 1997","$ 215,561,314 budgeted for <br> Ecolocial Services in 1998","$ 266,478,939 budgeted for <br> Ecolocial Services in 1999","$ 265,987,193 budgeted for <br> Ecolocial Services in 2000","$ 286,084,217 budgeted for <br> Ecolocial Services in 2001","$ 294,840,780 budgeted for <br> Ecolocial Services in 2002","$ 277,015,684 budgeted for <br> Ecolocial Services in 2003","$ 300,296,999 budgeted for <br> Ecolocial Services in 2004","$ 307,246,701 budgeted for <br> Ecolocial Services in 2005","$ 307,783,803 budgeted for <br> Ecolocial Services in 2006","$ 282,534,653 budgeted for <br> Ecolocial Services in 2007","$ 295,326,495 budgeted for <br> Ecolocial Services in 2008","$ 310,916,447 budgeted for <br> Ecolocial Services in 2009","$ 344,174,860 budgeted for <br> Ecolocial Services in 2010","$ 323,390,131 budgeted for <br> Ecolocial Services in 2011","$ 315,123,728 budgeted for <br> Ecolocial Services in 2012","$ 306,815,256 budgeted for <br> Ecolocial Services in 2013","$ 289,312,965 budgeted for <br> Ecolocial Services in 2014","$ 291,316,212 budgeted for <br> Ecolocial Services in 2015"],"hoverinfo":"text","name":"Ecological Services<br>budget","line":{"fillcolor":"rgba(188,189,34,1)","color":"#FDE725"},"xaxis":"x","yaxis":"y"}],"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":[]}</script>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<p class="caption">Use the dropdown button to see total annual appropriations.</p>
+</div>
+</div>
+</div>
+<p style="font-size:small">
+Source: <a href="https://www.fws.gov/budget/">FWS Budget Justification</a>
+</p>
+</div>
+</div>
+<div id="spending-trends" class="section level1">
+<h1>Spending Trends</h1>
+<div id="federal-agencies-have-been-spending-less-on-listed-species" class="section level3">
+<h3>Federal Agencies Have Been Spending Less on Listed Species</h3>
+<p>So far we have focused on how much Congress has appropriated to FWS. Here, we show how much federal agencies report spending on listed species. Like appropriations, spending has declined in recent years - since 2011 for FWS, and 2012 for all other federal agencies combined. This graph shows trends in the average spending per species, and the average spending on species in the top 5% of expenditures. As you can see, spending on the top 5% is roughly 10x higher than for the average species.</p>
+<div class="container-fluid">
+<div class="row">
+<div class="col-sm-12">
+<div id="htmlwidget-6618622938c0e5885dac" style="width:100%;height:400px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-6618622938c0e5885dac">{"x":{"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","font":{"color":"black"},"title":"Federal Spending on ESA Listed Species","xaxis":{"domain":[0,1],"title":"Year"},"yaxis":{"domain":[0,1],"title":"Spending per Species (2016 Dollars)","rangemode":"tozero"},"legend":{"x":0.8,"y":0.15,"bordercolor":"black","borderwidth":1},"updatemenus":[{"type":"buttons","title":"butt","y":0.95,"x":0.1,"buttons":[{"method":"update","args":["visible",[false,"legendonly",true,false,false]],"label":"FWS"},{"method":"update","args":["visible",[false,false,false,"legendonly",true]],"label":"Other Fed"}]}]},"source":"A","config":{"modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"modeBarButtonsToRemove":["sendDataToCloud"]},"data":[{"mode":"lines","line":{"fillcolor":"rgba(31,119,180,1)","color":"blue"},"type":"scatter","xaxis":"x","yaxis":"y"},{"mode":"lines","line":{"fillcolor":"rgba(255,127,14,1)","color":"#FDE725","dash":"dash"},"type":"scatter","x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[1872457.32032956,1579776.43988595,1171347.86914052,1549091.43175347,1431439.7900233,1560542.79056914,1698309.73167318,1596532.92345232,1404780.14310032,1288252.44398102,1295607.64525097],"name":"Top 5%<br>(click to show)","text":["Mean spending on the top 5% of species<br>was $1,872,457 in 2004","Mean spending on the top 5% of species<br>was $1,579,776 in 2005","Mean spending on the top 5% of species<br>was $1,171,348 in 2006","Mean spending on the top 5% of species<br>was $1,549,091 in 2007","Mean spending on the top 5% of species<br>was $1,431,440 in 2008","Mean spending on the top 5% of species<br>was $1,560,543 in 2009","Mean spending on the top 5% of species<br>was $1,698,310 in 2010","Mean spending on the top 5% of species<br>was $1,596,533 in 2011","Mean spending on the top 5% of species<br>was $1,404,780 in 2012","Mean spending on the top 5% of species<br>was $1,288,252 in 2013","Mean spending on the top 5% of species<br>was $1,295,608 in 2014"],"hoverinfo":"text","visible":"legendonly","xaxis":"x","yaxis":"y"},{"mode":"lines","line":{"fillcolor":"rgba(44,160,44,1)","color":"#21908C"},"type":"scatter","x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[129088.214351092,120082.795501171,104281.108641715,127806.744066648,123987.001094956,128343.791323541,135318.03259292,136546.561574015,116268.337946509,103803.879002644,102254.074203588],"name":"FWS Average","text":["FWS spent $129,088.2<br>per species in 2004","FWS spent $120,082.8<br>per species in 2005","FWS spent $104,281.1<br>per species in 2006","FWS spent $127,806.7<br>per species in 2007","FWS spent $123,987.0<br>per species in 2008","FWS spent $128,343.8<br>per species in 2009","FWS spent $135,318.0<br>per species in 2010","FWS spent $136,546.6<br>per species in 2011","FWS spent $116,268.3<br>per species in 2012","FWS spent $103,803.9<br>per species in 2013","FWS spent $102,254.1<br>per species in 2014"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"mode":"lines","line":{"fillcolor":"rgba(214,39,40,1)","color":"#FDE725","dash":"dash"},"type":"scatter","x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[10758634.0851622,12099913.4283038,12031999.6727297,12299671.6193559,10852237.4581964,15772945.2861909,13265515.0594385,14408201.1847772,15241916.632471,13229736.4397365,12034705.305365],"name":"Top 5%<br>(click to show)","text":["Mean spending on the top 5% of speicies was $10,758,634 in 2004","Mean spending on the top 5% of speicies was $12,099,913 in 2005","Mean spending on the top 5% of speicies was $12,032,000 in 2006","Mean spending on the top 5% of speicies was $12,299,672 in 2007","Mean spending on the top 5% of speicies was $10,852,237 in 2008","Mean spending on the top 5% of speicies was $15,772,945 in 2009","Mean spending on the top 5% of speicies was $13,265,515 in 2010","Mean spending on the top 5% of speicies was $14,408,201 in 2011","Mean spending on the top 5% of speicies was $15,241,917 in 2012","Mean spending on the top 5% of speicies was $13,229,736 in 2013","Mean spending on the top 5% of speicies was $12,034,705 in 2014"],"hoverinfo":"text","visible":false,"xaxis":"x","yaxis":"y"},{"mode":"lines","line":{"fillcolor":"rgba(148,103,189,1)","color":"#440154"},"type":"scatter","x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[624825.066446221,698926.880626138,681639.621018387,693151.239654285,641530.473631456,925611.163006495,782215.817735378,868262.272891386,908632.894599425,761296.278467472,704655.952011207],"name":"Other Fed<br>Average","text":["Other federal agencies spent<br>$624,825.1 per species in 2004","Other federal agencies spent<br>$698,926.9 per species in 2005","Other federal agencies spent<br>$681,639.6 per species in 2006","Other federal agencies spent<br>$693,151.2 per species in 2007","Other federal agencies spent<br>$641,530.5 per species in 2008","Other federal agencies spent<br>$925,611.2 per species in 2009","Other federal agencies spent<br>$782,215.8 per species in 2010","Other federal agencies spent<br>$868,262.3 per species in 2011","Other federal agencies spent<br>$908,632.9 per species in 2012","Other federal agencies spent<br>$761,296.3 per species in 2013","Other federal agencies spent<br>$704,656.0 per species in 2014"],"hoverinfo":"text","visible":false,"xaxis":"x","yaxis":"y"}],"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":[]}</script>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<p class="caption">Use the dropdown button to select FWS vs. Other federal expenditures.</p>
+</div>
+</div>
+</div>
+<p style="font-size:small">
+Source: <a href="https://www.fws.gov/Endangered/esa-library/index.html">FWS Expenditure Reports</a>
+</p>
+</div>
+</div>
+<div id="state-spending" class="section level1">
+<h1>State Spending</h1>
+<div id="most-spending-for-esa-activities-comes-from-federal-agencies" class="section level3">
+<h3>Most Spending for ESA Activities Comes From Federal Agencies</h3>
+<p>On average, states spend 26% as much as FWS, and 4% as much as other federal agencies. This pattern has persisted over time. The amount states spend is highly relevant to current discussions about their role in implementing the ESA.</p>
+<div class="container-fluid">
+<div class="row">
+<div class="col-sm-12">
+<div id="htmlwidget-00f533a554e9ccbd3806" style="width:100%;height:400px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-00f533a554e9ccbd3806">{"x":{"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"hovermode":"closest","font":{"color":"black"},"title":"Comparing Federal and State Spending on Listed Species","xaxis":{"domain":[0,1],"title":"Fiscal Year"},"yaxis":{"domain":[0,1],"title":"Expenditures (2016 Dollars)"},"legend":{"x":0.05,"y":0.95,"bordercolor":"black","borderwidth":1}},"source":"A","config":{"modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"modeBarButtonsToRemove":["sendDataToCloud"]},"data":[{"x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[158649415.437492,159109704.039051,134314067.930529,162817469.114266,152751985.34883,160173051.577628,175129814.487232,178491082.651187,153454651.780999,143100970.958333,151847300.192329],"type":"bar","name":"FWS","marker":{"fillcolor":"rgba(31,119,180,1)","color":"#31688E","line":{"color":"transparent"}},"text":["$158,649,415 spent by FWS in 2004","$159,109,704 spent by FWS in 2005","$134,314,068 spent by FWS in 2006","$162,817,469 spent by FWS in 2007","$152,751,985 spent by FWS in 2008","$160,173,052 spent by FWS in 2009","$175,129,814 spent by FWS in 2010","$178,491,083 spent by FWS in 2011","$153,454,652 spent by FWS in 2012","$143,100,971 spent by FWS in 2013","$151,847,300 spent by FWS in 2014"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[767910006.662405,926078116.829633,877951831.871683,882954894.806927,790365543.502449,1155162731.42562,1014660735.18857,1133978112.83494,1198491231.18371,1047967907.3586,1046414088.73664],"type":"bar","name":"Other Federal","marker":{"fillcolor":"rgba(255,127,14,1)","color":"#440154","line":{"color":"transparent"}},"text":["$  767,910,007 spent by Other Federal agencies in 2004","$  926,078,117 spent by Other Federal agencies in 2005","$  877,951,832 spent by Other Federal agencies in 2006","$  882,954,895 spent by Other Federal agencies in 2007","$  790,365,544 spent by Other Federal agencies in 2008","$1,155,162,731 spent by Other Federal agencies in 2009","$1,014,660,735 spent by Other Federal agencies in 2010","$1,133,978,113 spent by Other Federal agencies in 2011","$1,198,491,231 spent by Other Federal agencies in 2012","$1,047,967,907 spent by Other Federal agencies in 2013","$1,046,414,089 spent by Other Federal agencies in 2014"],"hoverinfo":"text","xaxis":"x","yaxis":"y"},{"x":[2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014],"y":[76389587.2257805,45221846.410107,41502920.1178302,59916748.1534091,54574780.260547,51463121.7659935,53505578.4057437,37569348.1810224,54545885.0005865,47399170.7622111,57063452.0941679],"type":"bar","name":"All States","marker":{"fillcolor":"rgba(44,160,44,1)","color":"#FDE725","line":{"color":"transparent"}},"text":["$76,389,587 spent by State agencies in 2004","$45,221,846 spent by State agencies in 2005","$41,502,920 spent by State agencies in 2006","$59,916,748 spent by State agencies in 2007","$54,574,780 spent by State agencies in 2008","$51,463,122 spent by State agencies in 2009","$53,505,578 spent by State agencies in 2010","$37,569,348 spent by State agencies in 2011","$54,545,885 spent by State agencies in 2012","$47,399,171 spent by State agencies in 2013","$57,063,452 spent by State agencies in 2014"],"hoverinfo":"text","xaxis":"x","yaxis":"y"}],"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":[]}</script>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<p class="caption">Categories may be turned off/on by clicking on the legend entry.</p>
+</div>
+</div>
+</div>
+<p style="font-size:small">
+Source: <a href="https://www.fws.gov/Endangered/esa-library/index.html">FWS Expenditure Reports</a>
+</p>
+<p><br><br></p>
+<hr />
+<p><br><br></p>
+<div class="container-fluid">
+<div class="row">
+<div class="col-sm-2"></div>
+<div class="col-sm-8">
+<div style="text-align: center"><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"> <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a> <br /> This <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">work</span> by <a xmlns:cc="http://creativecommons.org/ns" href="http://defenders.org" property="cc:attributionName" rel="cc:attributionURL">Defenders of Wildlife</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. <br /></div>
+</div>
+<div class="col-sm-2"></div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
