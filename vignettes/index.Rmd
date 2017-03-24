@@ -27,17 +27,26 @@ load("data/data.RData")
 
 tab <- select(Bay16,SITE, TURBINES, EFFORT, FLIGHT_MIN)
 
+prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  
+                      rate = mean(Bay16$EFFORT)),
+               from = 0.5,
+               to = 2)
+
+collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), 
+                   from = 0, 
+                   to = 0.01)
+
+act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
+
 ```
 
 # Introduction
 
 The U.S. Fish and Wildlife Service (FWS) uses a bayesian framework to develop a statisticl model predicting eagle collisions, and fatalities, at proposed wind energy sites.  The appeal of Bayesian modeling is the ability to incorporate prior information and uncertainty regarding parameter values into posterior estimates, ideally a closer representation of reality.  However, as Bayesian methodology is less familiar , there remains confusion over how this prior information functions.  Additionally, .  The purpose of this paper is to illustrate and quantify the effects of prior on the predicted outcomes of the eagle motality model, in terms of .  We use both empirical data from Bay et al. (2016), as well as a simulated dataset to demonstrate these effects both in theory and in practice.
 
-# Methods
+# Empirical Data
 
-### Empirical Data
-
-We used an empirical dataset from Appendix A in <p> [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p>, presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km
+We used an empirical dataset from Appendix A in <p> [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p>, presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km<sup>2</sup>, coverted from hectares, multiplied by 0.2 km, times the reported observation time coverted to hrs.
 
 ```{r p1, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -48,6 +57,7 @@ fluidPage(
     )
   ),
   fluidRow(
+    div(
     column(12,
   DT::datatable(tab,
                     fillContainer = TRUE,
@@ -62,12 +72,27 @@ fluidPage(
                                  )
                 )%>%
   DT::formatRound("EFFORT", 2)
+    ))
+  )
+)
+```
+
+```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
+fluidPage(
+  fluidRow(
+    column(12, "eat poop"
+    )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        "Categories may be turned off/on by clicking on the legend entry.")
     )
   )
 )
 ```
 
-The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 1).  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only.  
+The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 1).  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only. 
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -108,9 +133,11 @@ fluidPage(
 
 <p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
 
-### Simulation Study
+# Simulation Study
 
-To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible values for survey plot area, survey time, and eagle observations.  We based these values on the minimum requirements provides by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, our minimum simulated values for survey area and time were `r min(area)` km3, and `r min(time)` hrs, respectively.  We increments of one survey plot, up to five plots (area = `r max(area)`), and  `r max(time)` hrs, and generated a range of survey efforts forom all combinations.  Finally, we used the maximum observed value for eagle flight time in minutes, to generate a range of values from 0, incrementing by 50.  The final simulation data included 1050   
+###Generating Data Based on FWS Requirements
+
+To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible values for survey plot area, survey time, and eagle observations.  We based these values on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  Finally, we used the maximum observed value for eagle flight time (min) from Bay et al. (2016) to generate a range of values from 0, incrementing by 50.  The final simulation data included all combinations of survey effort and observed eagle activity, producing 1050 values.   
 
 ```{r eval = FALSE}
 flight <- seq(0, 1000, 50)
@@ -120,8 +147,6 @@ df <- expand.grid(TIME = time, AREA = area, a = flight)
 ```
 
 We then predicted at each combination of survey effort and eagle observation values, and report the mean, and 80% quantiles of the posterior distributions.  To generate predictions, we used the updated FWS priors for collision rate (XXX), and a.  FWS service uses a scaling factor based on the size, and hours of operation of a wind farm, to translate these per km3 estimates into predicted annual number of eagle fatalities. 
-
-# Results
 
 ### Greater Survey Effort Reduces Effect of Priors
 
@@ -186,23 +211,6 @@ plot_ly(sim)%>%
 ### Most Spending for ESA Activities Comes From Federal Agencies
 
 On average, states spend 26% as much as FWS, and 4% as much as other federal agencies. This pattern has persisted over time. The amount states spend is highly relevant to current discussions about their role in implementing the ESA.
-
-```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
-fluidPage(
-  fluidRow(
-    column(12, "eat poop"
-    )
-  ),
-  fluidRow(
-    column(12,
-      p(class = "caption",
-        "Categories may be turned off/on by clicking on the legend entry.")
-    )
-  )
-)
-```
-
-<p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
 
 <br><br>
 
