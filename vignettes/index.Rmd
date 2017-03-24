@@ -16,7 +16,6 @@ output:
 
 ```{r setup, include=FALSE}
 library(dplyr)
-library(DT)
 library(plotly)
 library(shiny)
 library(shinydashboard)
@@ -62,7 +61,7 @@ fluidPage(
                                  dom = 'tip'
                                  )
                 )%>%
-  formatRound("EFFORT", 2)
+  DT::formatRound("EFFORT", 2)
     )
   )
 )
@@ -135,12 +134,12 @@ fluidPage(
   fluidRow(
     column(6,
   plot_ly(sim)%>%
-  add_trace(x = ~b, y = ~(MN_F-MN)/MN, type = "scatter", mode = "markers",
-            marker = list(colorbar = list(title = "Eagle Obs<br>(min)")),
-            color = ~ a,
+  add_trace(x = ~ b, y = ~(MN_F-MN)/MN, type = "scatter", mode = "markers",
+            color = ~ a, marker = list(colorbar = list(showscale = FALSE)),
             text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a,
                           "hr*km<sup>3</sup>"),
             hoverinfo = 'text')%>%
+  hide_colorbar()%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
@@ -173,6 +172,8 @@ plot_ly(sim)%>%
     )
   )
 )
+
+
 ```
 <p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations divided by the number of listed species.</p>
 <p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
