@@ -30,18 +30,15 @@ fatality <- function(input, output, session) {
           add_trace(x = ~fatality$x, y = ~fatality$y, type = "scatter", mode = "lines",
                     fill = "tozeroy",
                     name = "Incl. Prior Exposure", line = list(color = vir_col(3)[3]),
-                    text = ~paste("Posterior probability of<br>",
+                    text = ~paste("Predicted fatalities<br>incorporating prior = ",
                                   round(fatality$x, 2),
-                                  " fatalities is ",
-                                  round(fatality$y, 2),sep = ""),
+                                  sep = ""),
                     hoverinfo = "text")%>%
           add_trace(x = ~fatality2$x, y = ~fatality2$y, type = "scatter", mode = "lines",
                     fill = "tozeroy",
                     line = list(color = vir_col(3)[2]), name = "Using Site Survey Only",
-                    text = ~paste("Posterior probability of<br>",
+                    text = ~paste("Predicted fatalities<br>from site survey = ",
                                   round(fatality2$x, 2),
-                                  " fatalities is ",
-                                  round(fatality2$y, 2),
                                   sep = ""),
                     hoverinfo = "text")%>%
           #add_trace(x = ~c(q80[[1]], q80[[1]], q80[[2]], q80[[2]]), y = ~c(max(fatality2$y/fatality2$n), 0, 0, max(fatality2$y/fatality2$n)), type = "scatter", mode = "lines")%>%

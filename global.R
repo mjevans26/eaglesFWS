@@ -34,21 +34,15 @@ prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  rate = mean(Bay16$EFFO
 collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), from = 0, to = 0.01)
 
 act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
-#gamma_plot <- function(obs){
-#  curve(dgamma(x, shape = mean(Bay16$flight_time),
-#               rate = mean(Bay16$effort)),0,1)
-#  curve(dgamma(x, shape = mean(Bay16$flight_time)+Bay16$flight_time[obs],
-#               rate = mean(Bay16$effort)+Bay16$effort[obs]),0,1, add = TRUE, lty = 2)
-#  abline( v = Bay16$flight_time[obs]/Bay16$effort[obs])
-#}
 
-prediction <- function(iters, alpha, beta){
-out <- data.frame(collision = rep(NA,iters), expose = rep(NA, iters), fatality = rep(NA, iters))
-for(n in 1:iters){
-  c <- rbeta(1, shape1 = 9.38, shape2 = 3224.51)
-  e <- rgamma(1, shape = alpha, rate = beta)
-  f <- c*e
-  out[n,] <- c(c,e,f)
-}
-return(out)
-}
+
+#prediction <- function(iters, alpha, beta){
+#out <- data.frame(collision = rep(NA,iters), expose = rep(NA, iters), fatality = rep(NA, iters))
+#for(n in 1:iters){
+#  c <- rbeta(1, shape1 = 9.38, shape2 = 3224.51)
+#  e <- rgamma(1, shape = alpha, rate = beta)
+#  f <- c*e
+#  out[n,] <- c(c,e,f)
+#}
+#return(out)
+#}

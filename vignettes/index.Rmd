@@ -37,7 +37,7 @@ The U.S. Fish and Wildlife Service (FWS) uses a bayesian framework to develop a 
 
 ### Empirical Data
 
-We used an empirical dataset from Appendix A in Bay et al. (2016), presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km
+We used an empirical dataset from Appendix A in <p> [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p>, presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km
 
 ```{r p1, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -67,9 +67,7 @@ fluidPage(
 )
 ```
 
-<p style='font-size:small'>Source: [Gerber, LR (2016). PNAS 113(13): 3563-3566](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p> 
-
-The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates.  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only.  
+The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 1).  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only.  
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
