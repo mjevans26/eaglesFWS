@@ -83,38 +83,10 @@ actionButton("calculate", "Calculate Fatalities")
 helpText("Note: Calcuating predicted fatality distributions takes time.  Please allow several seconds for the graph to load.")
 ```
 
-Column {data-width=500}
--------------------------------------------------------------------------
-
-### Survey Data
-
-```{r datatable, echo = FALSE}
-tab <- select(Bay16, 
-                    SITE, TURBINES, 
-                    EFFORT, FLIGHT_MIN)
-DT::renderDataTable({
-dt <- DT::datatable(tab,
-                    fillContainer = TRUE,
-                    selection = list(mode = 'single', 
-                                     selected = which(Bay16$SITE == input$sites), 
-                                     target = 'row'),
-                    colnames = c("Site", "Turbines", "Survey Effort (hr*km2)",
-                                 "Eagle Obs (min)"),
-                  options = list(rownames = FALSE,
-                                 pageLength = nrow(tab),
-                                 dom = 'tip'
-                                 )
-                )%>%
-  formatRound("EFFORT", 2)
-})
-```
-
-> Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).
-
 Column {data-width = 500}
 --------------------------------------------------------------------------
 
-### Prior Distribution of Collision Rates
+### Prior Probabilities of Eagle Collision Rates
 
 ```{r collisions, echo = FALSE}
 renderPlotly({
@@ -145,8 +117,13 @@ renderPlotly({
 ```{r exposures, echo = FALSE}
 observeEvent(input$update, {
   act <- isolate({cur_min()/cur_effort()})
-  obs <- isolate({density(rgamma(10000, shape = a(), rate = b()))
-        })
+  obs <- isolate({density(rgamma(10000, 
+                                 shape = a(), 
+                                 rate = b()
+                                 )
+                          )
+    })
+  
 output$exposure <- renderPlotly({ 
     plot_ly()%>%
       add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))),
@@ -175,7 +152,9 @@ output$exposure <- renderPlotly({
                           range = c(0,3)),
              yaxis = list(title = "Probability Density"))
    })
+
 })
+
 plotlyOutput("exposure")
 ```
 
@@ -224,3 +203,31 @@ output$fatality <- renderPlotly({
 })
 plotlyOutput('fatality')
 ```
+
+Column {data-width=500}
+-------------------------------------------------------------------------
+
+### Survey Data
+
+```{r datatable, echo = FALSE}
+tab <- select(Bay16, 
+                    SITE, TURBINES, 
+                    EFFORT, FLIGHT_MIN)
+DT::renderDataTable({
+dt <- DT::datatable(tab,
+                    fillContainer = TRUE,
+                    selection = list(mode = 'single', 
+                                     selected = which(Bay16$SITE == input$sites), 
+                                     target = 'row'),
+                    colnames = c("Site", "Turbines", "Survey Effort (hr*km2)",
+                                 "Eagle Obs (min)"),
+                  options = list(rownames = FALSE,
+                                 pageLength = nrow(tab),
+                                 dom = 'tip'
+                                 )
+                )%>%
+  formatRound("EFFORT", 2)
+})
+```
+
+> Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).
