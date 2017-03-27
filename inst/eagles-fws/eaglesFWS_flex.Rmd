@@ -112,7 +112,7 @@ renderPlotly({
 #})
 ```
 
-### Eagle Activity
+### Eagle Activity (_Click 'Update Distributions'_)
 
 ```{r exposures, echo = FALSE}
 observeEvent(input$update, {
@@ -160,7 +160,7 @@ plotlyOutput("exposure")
 
 > Activity is the number of minutes eagles are observed flying within survey areas, per hour.
 
-### Predicted Fatalities
+### Predicted Fatalities (_Click 'Predict Fatalities'_)
 
 ```{r fatalities, echo = FALSE}
 observeEvent(input$calculate,{
@@ -219,7 +219,7 @@ dt <- DT::datatable(tab,
                     selection = list(mode = 'single', 
                                      selected = which(Bay16$SITE == input$sites), 
                                      target = 'row'),
-                    colnames = c("Site", "Turbines", "Survey Effort (hr*km2)",
+                    colnames = c("Site", "Turbines", "Survey Effort (hr*km3)",
                                  "Eagle Obs (min)"),
                   options = list(rownames = FALSE,
                                  pageLength = nrow(tab),
