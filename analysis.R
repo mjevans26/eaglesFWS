@@ -1,3 +1,4 @@
+source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
 site_preds <- vapply(1:nrow(Bay16), function(x) {
 
  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]

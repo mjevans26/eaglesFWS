@@ -46,14 +46,14 @@ The U.S. Fish and Wildlife Service (FWS) uses a bayesian framework to develop a 
 
 # Empirical Data
 
-We used an empirical dataset from Appendix A in <p> [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p>, presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km<sup>2</sup>, coverted from hectares, multiplied by 0.2 km, times the reported observation time coverted to hrs.
+We used an empirical dataset from Appendix A in [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds), presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km<sup>3</sup>, coverted from hectares, multiplied by 0.2 km, times the reported observation time in hrs.
 
 ```{r p1, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
   fluidRow(
     column(12,
       p(class = "caption",
-        "Table 1. Data from Bay et al. (2016).  Effort was calculated as the product of survey area (km) and observation time (hr), derived from Appendix A.")
+        "Table 1. Data from Bay et al. (2016).  Effort was calculated as the product of survey area (km<sup>2</sup>) and observation time (hr), derived from Appendix A.")
     )
   ),
   fluidRow(
@@ -78,9 +78,50 @@ fluidPage(
 ```
 
 ```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
+
+plotList <- function(x){
+  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
+  b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
+  act <- Bay16$FLIGHT_MIN[x]/Bay16$EFFORT[x]
+  obs <- density(rgamma(10000, shape = a, rate = b))
+
+  plot_ly()%>%
+      add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))),
+                type = "scatter", mode = "lines",
+                name = "Observed", line = list(color = vir_col(3)[2]),
+                text = ~paste("Observed Activity<br>at site = ",
+                              round(act,2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = prior$x, y = prior$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Prior", line = list(color = vir_col(3)[1]),
+                text = ~paste("Prior Activity<br>estimate = ",
+                              round(prior$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = ~obs$x, y = ~obs$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Combined", line = list(color = vir_col(3)[3]),
+                text = ~paste("Combined Activity<br>estimate = ",
+                              round(obs$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      layout(#title = "Eagle Exposure",
+        showlegend = FALSE,
+             xaxis = list(range = c(0,3))
+             )
+}
+
+
 fluidPage(
   fluidRow(
-    column(12, "eat poop"
+    column(12,
+           subplot(lapply(1:16, plotList), 
+        nrows = 4, shareY = TRUE, titleY = FALSE, shareX =TRUE,titleX= FALSE)%>%
+  layout(xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)"),
+         yaxis = list(title = "Probability Density")
+         )
     )
   ),
   fluidRow(
@@ -99,12 +140,12 @@ fluidPage(
   fluidRow(
     column(12,
            plot_ly(Bay16)%>%
-             add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", 
+             add_trace(y = ~MN_F, x = ~MN, type = "scatter", mode = "markers", 
                        size = ~(UQ_F-LQ_F),
                        marker = list(line = list(color = "black"),
                             sizemode = "diameter",
                             colorbar = list(y = 0.75, x = 0.85,
-                                            title = "Survey Effort")
+                                            title = "Survey Effort<br>hr*km<sup>3</sup>")
                             ),
               sizes = c(10,25), color = ~ EFFORT, name = "Estimated Eagle Fatalities",
                             text = ~paste("Effort =", round(EFFORT,2),
@@ -115,9 +156,9 @@ fluidPage(
              add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)), type = "scatter",
                        mode = "lines", name = "1:1 Line")%>%
              layout(hovermode = "closest", font = list(color = "black"),
-                    xaxis = list(title = "Estimates using Priors"),
-                    yaxis = list(title = "Estimates without Priors"),
-                    legend = list(x = 0.10, y = 0.95, bordercolor = "black",
+                    yaxis = list(title = "Estimates using Priors"),
+                    xaxis = list(title = "Estimates without Priors"),
+                    legend = list(x = 0.6, y = 0.2, bordercolor = "black",
                                   borderwidth = 1)
                     )
     )
@@ -125,49 +166,54 @@ fluidPage(
   fluidRow(
     column(12,
       p(class = "caption",
-        "Figure 1. Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the mean of the posterior distributions.  Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
+        "Figure 1. Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the mean of the posterior distributions.  Points above below the 1:1 line represent sites at which use of prior information on eagle exposure produced higher estimates of fatality than estimates obtained from site survey data alone. Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
     )
   )
 )
 ```
 
-<p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
+<p style='font-size:small'>Source: [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p>
 
 # Simulation Study
 
 ###Generating Data Based on FWS Requirements
 
-To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible values for survey plot area, survey time, and eagle observations.  We based these values on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  Finally, we used the maximum observed value for eagle flight time (min) from Bay et al. (2016) to generate a range of values from 0, incrementing by 50.  The final simulation data included all combinations of survey effort and observed eagle activity, producing 1050 values.   
+To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible pre-construction survey values for plot area, time, and eagle observations.  We based these values on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  Finally, we used the maximum observed value for eagle flight time (min) from Bay et al. (2016) to generate a range of values from 0, incrementing by 50.  The final simulation data included all combinations of survey effort and observed eagle activity, producing 1050 values.   
 
 ```{r eval = FALSE}
 flight <- seq(0, 1000, 50)
 time <- seq(1, 10, 1)*12*2
 area <- seq(0.402, 2.01, 0.402)
 df <- expand.grid(TIME = time, AREA = area, a = flight)
+sim <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
 ```
 
 We then predicted at each combination of survey effort and eagle observation values, and report the mean, and 80% quantiles of the posterior distributions.  To generate predictions, we used the updated FWS priors for collision rate (XXX), and a.  FWS service uses a scaling factor based on the size, and hours of operation of a wind farm, to translate these per km3 estimates into predicted annual number of eagle fatalities. 
 
 ### Greater Survey Effort Reduces Effect of Priors
 
-Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.   
+Increased survey effort reduces the influence of prior exposure on posterior estimates, resulting in less discrepacy between predictions obtained using priors, and those obtained using site survey data only.  Similarly, the size of 80% CI from posterior estimates decreases as survey efforts increase (Fig. 3), indicating less uncertainty around fatality predictions.  As the 80% CI is used by FWS in determining permitting and mitigation  
 
 ```{r p3, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
   fluidRow(
     column(6,
   plot_ly(sim)%>%
-  add_trace(x = ~ b, y = ~(MN_F-MN)/MN, type = "scatter", mode = "markers",
+  add_trace(x = ~ b, y = ~(MN - MN_F), type = "scatter", mode = "markers",
             color = ~ a, marker = list(colorbar = list(showscale = FALSE)),
             text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a,
                           "hr*km<sup>3</sup>"),
-            hoverinfo = 'text')%>%
+            hoverinfo = 'text',
+            showlegend = FALSE)%>%
+    add_trace(x = ~c(10, 10), y = ~c(0, 0.3), type = "scatter",
+                       mode = "lines", name = "FWS Minimum")%>%
   hide_colorbar()%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
          ),
-         yaxis = list(title = "Standardized Deviance")
+         yaxis = list(title = "Standardized Deviance"),
+         legend = list(x = 0.8, y = 0.9)
   )
     ),
   column(6,
@@ -191,7 +237,7 @@ plot_ly(sim)%>%
   fluidRow(
     column(12,
       p(class = "caption",
-        "Fig. #. Use the dropdown button to see total annual appropriations.")
+        "Fig. 2. Effects of survey effort on a) difference between fatalities predicted with and without using prior information, and b) the size of the 80% CI around predicted fatalities across a range of potential eagle activity levels.")
     )
   )
 )
@@ -199,7 +245,8 @@ plot_ly(sim)%>%
 
 ```
 <p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations divided by the number of listed species.</p>
-<p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
+
+Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.  
 
 # Discussion
 
