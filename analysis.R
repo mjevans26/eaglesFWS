@@ -39,11 +39,12 @@ estimates <- function(niters, a, b){
 #1hr per plot per month for two years
 #survey plot of 0.8km radius * 0.2km height
 
-flight <- seq(0, 1000, 50)
+flight <- c(0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.15,0.20,0.25,0.50,0.75,1.00,1.50,2.00,2.50,3)
 time <- seq(1, 10, 1)*12*2
 area <- seq(0.402, 2.01, 0.402)
 df <- expand.grid(TIME = time, AREA = area, a = flight)
 df$b <- df$TIME*df$AREA
+df$a <- df$a*df$b
 
 #create dataset of estimated fatality distributions based on simulated
 #survey and flight observation data
@@ -115,23 +116,24 @@ plot_ly(sim)%>%
             marker = list(line = list(color = "black"),
                           sizemode = "diameter",
                           colorbar = list(y = 0.75, x = 0.85,
-                                          title = "Survey Effort")
+                                          title = "Eagle Activity<br>Rate")
             ),
-            sizes = c(5,15), color = ~ a, name = "Estimated Eagle Fatalities",
-            text = ~paste(round(b,3)),
+            sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = "text")%>%
   add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)), type = "scatter", mode = "lines", name = "1:1 Line")%>%
+  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004), type = "scatter", mode = "lines", name = "Mean")%>%
   layout(hovermode = "closest", font = list(color = "black"),
          xaxis = list(title = "Estimates using Priors"),
          yaxis = list(title = "Estimates without Priors"),
          legend = list(x = 0.10, y = 0.95, bordercolor = "black", borderwidth = 1))
 
-plot_ly(sim[sim$a != 50, ])%>%
-  add_trace(x = ~b, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
-            color = ~ a,
+plot_ly(sim)%>%
+  add_trace(x = ~b, y = ~(MN_F-MN), type = "scatter", mode = "markers",
+            color = ~ eagle_rate,
             marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
             ),
-            text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a), "hr*km<sup>3</sup>",
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = 'text')%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
@@ -142,7 +144,7 @@ plot_ly(sim[sim$a != 50, ])%>%
 
 plot_ly(sim)%>%
   add_trace(x = ~b, y = ~UQ_F-LQ_F, type = "scatter", mode = "markers",
-            color = ~ a,
+            color = ~ eagle_rate,
             marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
             ),
             text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a), "hr*km<sup>3</sup>",
@@ -155,7 +157,7 @@ plot_ly(sim)%>%
   )
 
 plot_ly(sim)%>%
-  add_trace(x = ~a, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
+  add_trace(x = ~eagle_rate, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
             color = ~ b,
             marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
             ),

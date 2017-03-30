@@ -133,7 +133,7 @@ fluidPage(
 )
 ```
 
-The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 1).  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only. 
+The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 1).  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only. These instances are indicated by points above the 1:1 line in Figure 1. 
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -158,7 +158,7 @@ fluidPage(
              layout(hovermode = "closest", font = list(color = "black"),
                     yaxis = list(title = "Estimates using Priors"),
                     xaxis = list(title = "Estimates without Priors"),
-                    legend = list(x = 0.6, y = 0.2, bordercolor = "black",
+                    legend = list(x = 0.6, y = 0.3, bordercolor = "black",
                                   borderwidth = 1)
                     )
     )
@@ -166,7 +166,7 @@ fluidPage(
   fluidRow(
     column(12,
       p(class = "caption",
-        "Figure 1. Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the mean of the posterior distributions.  Points above below the 1:1 line represent sites at which use of prior information on eagle exposure produced higher estimates of fatality than estimates obtained from site survey data alone. Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
+        "Figure 1. Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the mean of the posterior distributions.  Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
     )
   )
 )
@@ -191,40 +191,84 @@ sim <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
 We then predicted at each combination of survey effort and eagle observation values, and report the mean, and 80% quantiles of the posterior distributions.  To generate predictions, we used the updated FWS priors for collision rate (XXX), and a.  FWS service uses a scaling factor based on the size, and hours of operation of a wind farm, to translate these per km3 estimates into predicted annual number of eagle fatalities. 
 
 ### Greater Survey Effort Reduces Effect of Priors
+For eagle activity rates < 1.5 min/survey effort, predicted fatlity rates are higher when estimated using priors, than without (i.e. above the 1:1 line in Fig. 2).  The trend reverses when activity rates are > 1.5.  1.5 was the mean observed activity rate, the prior distribution.  Thus, Figure 2 also illustrates that predicted fatalities estimated with and without priors are closer when survey effort is greater (i.e., larger circles).
 
-Increased survey effort reduces the influence of prior exposure on posterior estimates, resulting in less discrepacy between predictions obtained using priors, and those obtained using site survey data only.  Similarly, the size of 80% CI from posterior estimates decreases as survey efforts increase (Fig. 3), indicating less uncertainty around fatality predictions.  As the 80% CI is used by FWS in determining permitting and mitigation  
+```{r sim1, echo=FALSE, warning = FALSE, error = FALSE}
+fluidPage(
+  fluidRow(
+    column(12,
 
-```{r p3, echo=FALSE, warning=FALSE, error=FALSE}
+plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
+  add_trace(x = ~MN, y = ~MN_F, type = "scatter", mode = "markers", size = ~b,
+            marker = list(line = list(color = "black"),
+                          sizemode = "diameter",
+                          colorbar = list(y = 1, x = 0.1,
+                                          title = "Eagle Activity<br>Rate")
+            ),
+            sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>",
+                          "<br>Eagles =", eagle_rate),
+            hoverinfo = "text")%>%
+  add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)),
+            type = "scatter", mode = "lines", name = "1:1 Line")%>%
+#  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004),
+#            type = "scatter", mode = "lines", name = "Mean")%>%
+  layout(hovermode = "closest", font = list(color = "black"),
+         xaxis = list(title = "Estimates without Priors"),
+         yaxis = list(title = "Estimates using Priors"),
+         legend = list(x = 0.6, y = 0.3, bordercolor = "black", borderwidth = 1)
+         )
+
+           )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        "Fig. 2. Predicted eagle fatalities produced with and without prior information about eagle exposure at wind facilities, generated from simulated data.  Plotted values are the mean of the posterior distributions.  Marker size is proportional to the size of the posterior distribution 80% CI.")
+    )
+  )
+)
+```
+
+
+Increased survey effort reduces the influence of prior exposure on posterior estimates, resulting in less discrepacy between predictions obtained using priors, and those obtained using site survey data only.  Similarly, the size of 80% CI from posterior estimates decreases as survey efforts increase (Fig. 3), indicating less uncertainty around fatality predictions.  As the 80% CI is used by FWS in permitting and determining mitigation requirements 
+
+```{r p3, echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
 fluidPage(
   fluidRow(
     column(6,
   plot_ly(sim)%>%
-  add_trace(x = ~ b, y = ~(MN - MN_F), type = "scatter", mode = "markers",
-            color = ~ a, marker = list(colorbar = list(showscale = FALSE)),
-            text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a,
-                          "hr*km<sup>3</sup>"),
+  add_trace(x = ~ b, y = ~(MN_F - MN), type = "scatter", mode = "markers",
+            color = ~ eagle_rate, marker = list(
+              colorbar = list(title = "Eagle Activity<br>(min)", y = 0.5, x = 0.8)),
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", a,
+                          "minutes"),
             hoverinfo = 'text',
             showlegend = FALSE)%>%
-    add_trace(x = ~c(10, 10), y = ~c(0, 0.3), type = "scatter",
+    add_trace(x = ~c(10, 10), y = ~c(min(MN_F - MN), max(MN_F - MN)), type = "scatter",
                        mode = "lines", name = "FWS Minimum")%>%
-  hide_colorbar()%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
          ),
          yaxis = list(title = "Standardized Deviance"),
-         legend = list(x = 0.8, y = 0.9)
+         legend = list(x = 0.5, y = 0.9)
   )
     ),
   column(6,
 
 plot_ly(sim)%>%
-  add_trace(x = ~b, y = ~UQ_F-LQ_F, type = "scatter", mode = "markers",
-            color = ~ a,
-            marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
-            ),
+  add_trace(x = ~b, y = ~(UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers",
+            color = ~ eagle_rate,
+            marker = list(colorbar = list(colorbar = list(showscale = FALSE))
+            ), showlegend = FALSE,
             text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a), "hr*km<sup>3</sup>",
             hoverinfo = 'text')%>%
+#      add_trace(x = ~c(10, 10), y = ~c(min(UQ_F-LQ_F), max(UQ_F-LQ_F)),
+#                type = "scatter",
+#                mode = "lines", name = "FWS Minimum<br>Survey Effort",
+#                showlegend = FALSE)%>%
+  hide_colorbar()%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
@@ -237,7 +281,7 @@ plot_ly(sim)%>%
   fluidRow(
     column(12,
       p(class = "caption",
-        "Fig. 2. Effects of survey effort on a) difference between fatalities predicted with and without using prior information, and b) the size of the 80% CI around predicted fatalities across a range of potential eagle activity levels.")
+        "Fig. 3. Effects of survey effort on a) difference between fatalities predicted with and without using prior information, and b) the size of the 80% CI around predicted fatalities across a range of potential eagle activity levels.")
     )
   )
 )
@@ -248,17 +292,16 @@ plot_ly(sim)%>%
 
 Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.  
 
-# Discussion
+# Policy Implications
 
 ### Federal Agencies Have Been Spending Less on Listed Species
+The primary findings are that .  Simulation data can be used by both FWS and wind energy developers to understand and anticipate how survey data and prior information may produce .
 
+An important question is when do priors significantly overpredict (bad because of undue restrictions on developers) versus underpredict.
 
-# State Spending
+The results of our simulation study indicate that the effor expended during pre-construction surveys has a significant effect on reducing the influence of prior information on predicted eagle fatalities at a given site.
 
-### Most Spending for ESA Activities Comes From Federal Agencies
-
-On average, states spend 26% as much as FWS, and 4% as much as other federal agencies. This pattern has persisted over time. The amount states spend is highly relevant to current discussions about their role in implementing the ESA.
-
+We recommend thresholds based on...
 <br><br>
 
 ------
