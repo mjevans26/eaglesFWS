@@ -45,16 +45,16 @@ df <- expand.grid(TIME = time, AREA = area, eagle_rate = flight)
 df$b <- df$TIME*df$AREA
 df$a <- df$eagle_rate*df$b
 
-site_preds <- vapply(1:nrow(Bay16), function(x) {
-
-  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
-  b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
-  out <- prediction(niters, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+uppers <- vapply(1:nrow(df), function(x) {
+  a <- df$a[x]
+  b <- df$b[x]
+  out <- prediction(10000, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
   q80 <- quantile(out$fatality, 0.8)
   out2 <- prediction(10000, a, b)
   q82 <- quantile(out2$fatality, 0.8)
   return (c("U_F" = q80, "U" = q82))
 }, USE.NAMES = FALSE, FUN.VALUE = c(0,0))
+
 #create dataset of estimated fatality distributions based on simulated
 #survey and flight observation data
 sim <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
