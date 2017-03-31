@@ -25,13 +25,12 @@ Bay16$UQ <- site_preds[6,]
 #hardwired to use Bay16 data as exposure priors
 estimates <- function(niters, a, b){
   out <- prediction(niters, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
-  fatality <- mean(out$fatality)
-  q80 <- quantile(out$fatality, c(0.1, 0.9))
+  #fatality <- mean(out$fatality)
+  q80 <- quantile(out$fatality, 0.8)
   out2 <- prediction(10000, a, b)
-  fatality2 <- mean(out2$fatality)
-  q82 <- quantile(out2$fatality, c(0.1, 0.9))
-  return (c("MN_F" = fatality, "LQ_F" = q80[1], "UQ_F" = q80[2],
-            "MN" = fatality2, "LQ" = q82[1], "UQ" = q82[2]))
+  #fatality2 <- mean(out2$fatality)
+  q82 <- quantile(out2$fatality, 0.8)
+  return (c("U_F" = q80, "U" = q82))
 }
 
 #cretae simulated eagle flight observation and survey data
@@ -42,14 +41,25 @@ estimates <- function(niters, a, b){
 flight <- c(0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.15,0.20,0.25,0.50,0.75,1.00,1.50,2.00,2.50,3)
 time <- seq(1, 10, 1)*12*2
 area <- seq(0.402, 2.01, 0.402)
-df <- expand.grid(TIME = time, AREA = area, a = flight)
+df <- expand.grid(TIME = time, AREA = area, eagle_rate = flight)
 df$b <- df$TIME*df$AREA
-df$a <- df$a*df$b
+df$a <- df$eagle_rate*df$b
 
+site_preds <- vapply(1:nrow(Bay16), function(x) {
+
+  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
+  b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
+  out <- prediction(niters, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+  q80 <- quantile(out$fatality, 0.8)
+  out2 <- prediction(10000, a, b)
+  q82 <- quantile(out2$fatality, 0.8)
+  return (c("U_F" = q80, "U" = q82))
+}, USE.NAMES = FALSE, FUN.VALUE = c(0,0))
 #create dataset of estimated fatality distributions based on simulated
 #survey and flight observation data
-sim <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
+sim <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
 colnames(sim)[c(4,5,7,8)] <- c("LQ_F", "UQ_F", "LQ", "UQ")
+sim$eagle_rate <- flight
 
   plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(UQ_F-LQ_F),
