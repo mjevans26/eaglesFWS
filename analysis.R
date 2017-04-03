@@ -4,15 +4,15 @@ site_preds <- vapply(1:nrow(Bay16), function(x) {
  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
  b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
  out <- prediction(10000, a, b)
- fatality <- mean(out$fatality*Bay16$SCALE[x])
- q80 <- quantile(out$fatality*Bay16$SCALE[x], c(0.1, 0.9))
+ fatality <- mean(out$fatality)
+ q80 <- quantile(out$fatality, c(0.1, 0.8, 0.9))
 
  out2 <- prediction(10000, a-mean(Bay16$FLIGHT_MIN), b-mean(Bay16$EFFORT))
- fatality2 <- mean(out2$fatality*Bay16$SCALE[x])
- q82 <- quantile(out2$fatality*Bay16$SCALE[x], c(0.1, 0.9))
- return (c(fatality, q80[1], q80[2], fatality2, q82[1], q82[2]))
+ fatality2 <- mean(out2$fatality)
+ q82 <- quantile(out2$fatality, c(0.1, 0.8, 0.9))
+ return (c(fatality, q80[1], q80[3], fatality2, q82[1], q82[3], q80[2], q82[2]))
 
-}, USE.NAMES = FALSE, FUN.VALUE = c(0,0,0,0,0,0))
+}, USE.NAMES = FALSE, FUN.VALUE = c(0,0,0,0,0,0,0,0))
 
 Bay16$MN_F <- site_preds[1,]
 Bay16$LQ_F <- site_preds[2,]
@@ -20,6 +20,8 @@ Bay16$UQ_F <- site_preds[3,]
 Bay16$MN <- site_preds[4,]
 Bay16$LQ <- site_preds[5,]
 Bay16$UQ <- site_preds[6,]
+Bay16$U_F <- site_preds[7,]
+Bay16$U <- site_preds[8,]
 
 #function to return mean and 80% CI estimates from a predicted fatality distribution
 #hardwired to use Bay16 data as exposure priors
