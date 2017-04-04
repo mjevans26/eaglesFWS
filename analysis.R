@@ -196,4 +196,19 @@ plot_ly(sim)%>%
          yaxis = list(title = "Size of 80% CI")
   )
 
+plot_ly(sim)%>%
+  add_trace(x = ~(eagle_rate - 1.099637)/0.1094509,
+            y = ~(MN_F-MN), type = "scatter", mode = "markers",
+            color = ~ b,
+            marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
+            ),
+            text = ~paste("Effort =", round((eagle_rate - 1.099637)/0.1094509, 3), "<br>Eagles =", MN_F-MN), "hr*km<sup>3</sup>",
+            hoverinfo = 'text')%>%
+  layout(hovermode = 'closest',
+         font = list(color = 'black'),
+         xaxis = list(title = "Eagle Rate Z-score"
+         ),
+         yaxis = list(title = "Discrepancy")
+  )
+glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 

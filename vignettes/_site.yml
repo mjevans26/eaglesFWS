@@ -1,7 +1,7 @@
-name: "ESApprops"
+name: "eaglesFWS"
 theme: yeti
 navbar:
-  title: "ESA Funding"
+  title: "FWS Eagle Mortality"
   type: inverse
   left:
     - text: CCI-dev
@@ -10,6 +10,6 @@ navbar:
       href: mailto:esa@defenders.org
   right:
     - icon: fa-github fa-lg
-      href: https://github.com/mjevans26/ESApprops
+      href: https://github.com/mjevans26/eaglesFWS
     - text: Defenders
       href: http://www.defenders.org
