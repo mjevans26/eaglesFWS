@@ -2,8 +2,8 @@ library(dplyr)
 library(plotly)
 library(shiny)
 library(shinydashboard)
+plot(Bay16$RISK_HA, (fatality/(Bay16$FLIGHT_MIN/Bay16$EFFORT))/mean(rbeta(1000, 9.38, 3224.51)))
 
-plot(Bay16$RISK_HA, (Bay16$COLLISIONS/(Bay16$FLIGHT_MIN/Bay16$EFFORT))/mean(rbeta(1000, 9.38, 3224.51)))
 test <- glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415~RISK_HA + r2)
 #Bay16 <- read.csv("C:/Users/mevans/repos/eaglesFWS/BayData.csv", header = TRUE)
 

@@ -1,13 +1,13 @@
 source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
 site_preds <- vapply(1:nrow(Bay16), function(x) {
 
- a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
- b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
- out <- prediction(10000, a, b)
+ a <- Bay16$FLIGHT_MIN[x]
+ b <- Bay16$EFFORT[x]
+ out <- prediction(10000, mean(Bay16$FLIGHT_MIN) + a, mean(Bay16$EFFORT) + b)
  fatality <- mean(out$fatality)
  q80 <- quantile(out$fatality, c(0.1, 0.8, 0.9))
 
- out2 <- prediction(10000, a-mean(Bay16$FLIGHT_MIN), b-mean(Bay16$EFFORT))
+ out2 <- prediction(10000, a, b)
  fatality2 <- mean(out2$fatality)
  q82 <- quantile(out2$fatality, c(0.1, 0.8, 0.9))
  return (c(fatality, q80[1], q80[3], fatality2, q82[1], q82[3], q80[2], q82[2]))
