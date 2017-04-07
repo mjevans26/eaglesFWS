@@ -4,7 +4,7 @@ prediction <- function(iters, alpha, beta){
                    fatality = rep(NA, iters)
                    )
  for(n in 1:iters){
-   c <- rbeta(1, shape1 = 9.38, shape2 = 3224.51)
+   c <- rbeta(1, shape1 = 32.56, shape2 = 8641.52)
    e <- rgamma(1, shape = alpha, rate = beta)
    f <- c*e
    out[n,] <- c(c,e,f)
