@@ -41,9 +41,9 @@ demo <- curve(dnorm(x, 5, 1), from = 0, to = 10)
 ef <- curve(-22560 + (2306*x) + (-2.607*x^2), from = 0, to = 400)
 ```
 
-# Introduction
+# Background
 
-The U.S. Fish and Wildlife Service (FWS) uses a bayesian framework to develop a statistical model predicting eagle collisions and fatalities at proposed wind energy sites.  The appeal of Bayesian modeling is the ability to incorporate prior information and uncertainty regarding parameter values into estimates, ideally providing a better representation of reality.  However, as Bayesian methodology is still gaining widespread familiarity, there remains confusion over how this prior information functions. 
+The U.S. Fish and Wildlife Service (FWS) uses a Bayesian framework to predict eagle collisions and fatalities at proposed wind energy sites.  One of the appeals of Bayesian modeling is the ability to incorporate prior information and uncertainty regarding parameter values into estimates, ideally providing a better representation of reality.  However, there is still debate over the appropriate choice and use of priors. Additionally, as Bayesian methodology is still gaining widespread familiarity, the ways in which prior information affects model outcomes can be unclear.  
 
 The purpose of this paper is to illustrate and quantify the effects of Bayesian priors used by FWS on the predicted outcomes of the eagle mortality model, in terms of predicted eagle fatalities.  We use both empirical data from wind farms provided in a study presenting the methods used by FWS to implement the Bayesian prediction model (Bay et al. 2016), as well as a simulated dataset to demonstrate these effects both in theory and in practice.
 
@@ -57,7 +57,7 @@ The components of the Bayesian model used by FWS to predict eagle fatality are:
 - **Collision Rate**: probability an eagle flying within a turbine risk area is struck and killed.
 - **ExpansionFactor**: constant converting fatality rate to annual fatalities, based on the size of a wind facility.
 
-These parameters are combined to produce a posterior distribution representing the relative likelihood of how many ealges will be killed annually at a site.
+These parameters are represented as probability distributions, and combined to produce a posterior distribution representing the relative likelihood of how many ealges will be killed annually at a site.
 
 $Fatalities = Exposure * Collision Rate * Expansion$
 
@@ -161,7 +161,7 @@ fluidPage(
 
 ### Combining Prior Information with Survey Data
 
-Eagle flight time and survey effort are used to estimate eagle exposure at a given wind site. Figure 2 shows how the measured exposure (green lines) is integrated with a consistent prior distribution of exposure probabilities (purple), to produce a probability distribution of exposure (yellow).  This resulting distribution is used as the exposure rate to predict eagle fatalities .  The effect of the prior distribution is to modify extreme observed values that differ greatly from mean observations across a larger sample of sites.
+Eagle flight time and survey effort are used to estimate eagle exposure at a given wind site. Figure 2 shows how the measured exposure (green lines) is integrated with a consistent prior distribution of exposure probabilities (purple), to produce a probability distribution of exposure (yellow).  This resulting distribution is used as the exposure rate to predict eagle fatalities at a site.  The effect of the prior distribution is to modify extreme observed values that differ greatly from mean observations across a larger sample of sites.
 
 ```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
 
@@ -230,7 +230,7 @@ fluidPage(
 
 ### Using Priors Changes Estimates
 
-The average difference between mean predicted eagle take using priors versus site-specific estimates was `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 2)` eagles per year (max = `r round(max((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`, s.d. = `r round(sd((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`).  At the majority of sites, the use of prior exposure information produced a higher estimate of eagle take (Fig. 2). These instances are indicated by points above the 1:1 line in Figure 2.  The influence of eagle exposure priors on estimated eagle fatalities was less at facilities that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 2).   
+At the majority of sites, the Bayesian estimate of eagle fatalities using prior exposure information was higher than a site-specific estimate (Fig. 2). These instances are indicated by points above the 1:1 line in Figure 2.  The influence of eagle exposure priors on estimated eagle fatalities was less at facilities that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 2).   
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
@@ -263,7 +263,7 @@ fluidPage(
   fluidRow(
     column(12,
       p(class = "caption",
-        tags$b("Figure 3."), "Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the mean of the posterior distributions.  Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
+        tags$b("Figure 3."), "Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the 80th percentiles of the posterior distributions.  Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
     )
   )
 )
@@ -275,8 +275,8 @@ fluidPage(
 
 To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible pre-construction survey values for survey area, time, and eagle observations.   
 
-### Under or Over Prediction Depends on Mean of Prior Distribution
-For eagle exposure rates < 1.1 min/hr*km^3^, predicted fatlity rates estimated using priors were higher than site-specific estimates (i.e. above the 1:1 line in Fig. 3).  This pattern reversed when exposure was > 1.1.  The threshold of 1.1 corresponds to the mean exposure rate of the prior exposure distribution.  The actual value of this threshold is subject to change as prior distributions are updated with new survey data, but the pattern will be consistent.  Figure 3 also illustrates that predicted fatalities estimated with and without priors are more similar when survey effort is greater (i.e., larger circles).
+### Prediction Discrepancies Increase at Extreme Values
+For eagle exposure rates < 1.1 min/hr*km^3^, predicted fatlity rates estimated using priors were higher than site-specific estimates (i.e. above the 1:1 line in Fig. 3).  This pattern reversed when exposure was > 1.1.  The threshold of 1.1 corresponds to the mean exposure rate of the prior exposure distribution.  The actual value of this threshold is subject to change as prior distributions are updated with new survey data, but the pattern will be consistent.  Figure 4 also illustrates that predicted fatalities estimated with and without priors are more similar when survey effort is greater (i.e., larger circles).
 
 ```{r sim1, echo=FALSE, warning = FALSE, error = FALSE}
 fluidPage(
@@ -310,13 +310,13 @@ plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),]
   fluidRow(
     column(12,
       p(class = "caption",
-        tags$b("Figure 5."), "Discrepancy between Bayesian and site-specific estimates of eagle fatalities, as a function of distance between the observed and prior mean of exposure rate. Values were generated from simulated data.  A z-score of zero equates to an observed exposure rate equal to the mean of the exposure prior.")
+        tags$b("Figure 4."), "Discrepancy between Bayesian and site-specific estimates of eagle fatalities, as a function of distance between the observed and prior mean of exposure rate. Values were generated from simulated data.  A z-score of zero equates to an observed exposure rate equal to the mean of the exposure prior.")
     )
   )
 )
 ```
 
-The prior distribution of exposure probabilities has a greater effect on estimates when observed exposure rate at a site is farther from the mean of the prior.  Figure 6 illustrates this relationship in terms of how many standard deviations an observed exposure rate was from the prior mean .  At one standard deviation above or below the mean, take estimates can differ by as much as 35 eagles per year.
+The prior distribution of exposure probabilities has a greater effect on estimates when observed exposure rate at a site is farther from the mean of the prior.  Figure 5 illustrates this relationship in terms of how many standard deviations an observed exposure rate was from the prior mean .  At one standard deviation above or below the mean, take estimates can differ by as much as 0.1 eagles per year.
 
 ```{r echo = FALSE, warning = FALSE, error = FALSE}
 fluidPage(
@@ -333,15 +333,15 @@ plot_ly(sim)%>%
             hoverinfo = 'text')%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
-         xaxis = list(title = "Observed Exposure Rate Z-score"
+         xaxis = list(title = " Difference between Observed Exposure and Prior Mean (standard deviations)"
          ),
-         yaxis = list(title = "Estimate Discrepancy")
+         yaxis = list(title = "Fatality Estimate Discrepancy")
   )
 ),
   fluidRow(
     column(12,
       p(class = "caption",
-        tags$b("Figure 6."), "Predicted eagle fatalities produced with and without prior information about eagle exposure at wind facilities, generated from simulated data.  Plotted values are the 80th percentile of the posterior distributions.  Marker size is proportional to the size of the posterior distribution 90% CI.")
+        tags$b("Figure 5."), "Difference between Bayesian and site-specific eagle fatality estimates as a function of distance of observed eagle exposure from prior exposure mean.  Plotted values are the 80th percentile of the posterior distributions.")
     )
   )
 )
@@ -349,7 +349,7 @@ plot_ly(sim)%>%
 
 ### Greater Survey Effort Reduces Effect of Priors
 
-Increased survey effort reduced the influence of prior distributions of exposure probability on estimates of fatalities, resulting in less discrepacy between predictions obtained using priors and those obtained using site survey data only.  The magnitude of the effect of effort on estimate discrepancy was contingent upon the observed eagle exposure rate. At the minimum survey effort required by FWS, the difference in estimates ranged from `r round(min((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` to `r round(max((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` fatalities per year. This discrepancy decreased exponentially with greater survey effort. Similarly, the size of 80% CI from posterior estimates decreased as survey efforts increase (Fig. 3), indicating less uncertainty around fatality predictions. 
+Increased survey effort reduced the influence of prior distributions of exposure probability on estimates of fatalities, resulting in less discrepacy between predictions obtained using priors and those obtained using site survey data only.  The magnitude of the effect of effort on estimate discrepancy was contingent upon the observed eagle exposure rate. This discrepancy decreased exponentially with greater survey effort. Similarly, the size of 80% CI from posterior estimates decreased as survey efforts increase (Fig. 6), indicating less uncertainty around fatality predictions. 
 
 ```{r p3, echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
 #sim$b2 <- sim$b^2
@@ -380,7 +380,7 @@ fluidPage(
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
          ),
-         yaxis = list(title = "Difference in Predicted Eagle Fatalities"),
+         yaxis = list(title = "fatality Estimate Discrepancy"),
          legend = list(x = 0.6, y = 0.9)
   )
     ),
@@ -412,7 +412,7 @@ plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),]
   fluidRow(
     column(12,
       p(class = "caption",
-        tags$b("Figure 5."), " Effects of survey effort on a) difference between fatalities predicted with and without prior exposure information, and b) the size of the 80% CI of the predicted fatality distribution, relative to the mean.")
+        tags$b("Figure 6."), " Effects of survey effort on a) difference between fatalities predicted with and without prior exposure information, and b) the size of the 80% CI of the predicted fatality distribution, relative to the mean.")
     )
   )
 )
@@ -425,31 +425,26 @@ plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),]
 
 ### Primary Takeaways
 
-The use of prior distributions of exposure probability can strongly affect the predicted eagle take at wind energy facilities.  Among 26 wind farms, we saw take discrepancies from `r round(min((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)` to `r round(max((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)` eagles per year.
+The use of prior distributions of exposure probability can strongly affect the predicted eagle take at wind energy facilities.  Among 26 wind farms, the average difference between 80^th^ percentiles of Bayesian versus site-specific estimates of eagle fatalities was `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 2)` eagles per year (max = `r round(max((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`, s.d. = `r round(sd((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`).
 
-Survey effort, and the number of eagles observed at a site change the magnitude of this effect. For a site with minimum eagle exposure rates (0.01 min/hr*km63^), adding an additional survey hour per month, or survey plot to the FWS minimum can decrease discrepancy by 32 fatalities.
+Survey effort, and the number of eagles observed at a site change the magnitude of this effect.  At the minimum survey effort required by FWS, the difference in estimates ranged from `r round(min((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` to `r round(max((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` fatalities per year. For a site with minimum eagle exposure rates (0.01 min/hr*km^3^), adding an additional survey hour per month, or survey plot, to the FWS minimum can decrease discrepancy by 0.2 annual fatalities. 
 
-The more observed eagle activity at a site differs from the mean of the prior distribution, the greater the discrepancy between site-specific and Bayesian estimates of predicted fatality.  For every s.d. that an observed exposure rate is greater than the mean of the prior, discrepancy increases by 35 eagles.
-
-We found effort to have a significant effect on reducing the influence of prior information on predicted eagle fatalities at a given site.
-
+The more observed eagle activity at a site differs from the mean of the prior distribution, the greater the discrepancy between site-specific and Bayesian estimates of predicted fatality.  For every s.d. that an observed exposure rate is greater than the mean of the prior, discrepancy increases by 0.1 eagles.
 
 ### Recommendations
 The relationship between deviation of observed exposure rates from the mean of the prior and estimate discrepancy suggest thresholds for trigger points at which FWS may want to consider a different approach to permitting and mitigation, or require additional survey effort.
 
-Increasing minimum survey effort - either number of plots, or number of hours, will reduce the influence of general priors, increasing confidence in the posterior estimates.  This will benefit both wind developers, who can be less skeptical that mitigation requirements are being artificially inflated, and FWS, which can be more confident that Bayesian priors are not underpredicting fatality rates at sites with high eagle activity.
+Increasing minimum survey effort - either number of plots, or number of hours - will reduce the influence of general priors, increasing confidence in the posterior estimates.  This will benefit both wind developers, who can be less skeptical that mitigation requirements are being artificially inflated, and FWS, which can be more confident that Bayesian priors are not underpredicting fatality rates at sites with high eagle activity.
 
 The addition of covariates to the prior distribution of exposure probabilities may also help alleviate the effect of priors on predictions at sites with extreme observed eagle activity.  rather than integrating site specific values with all wind projects, they could be integrated with distributions from sites sharing similar characteristics.
 
 ### Discussion
 
-Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances. 
+An advantage of Bayesian modeling is to moderate the effect of random outlier observations.  However, this also means that where surveys accurately detect extreme observed eagle activity, this site-specific information can be effectively washed out.  Thus, an important question is when do extreme eagle activity levels observed during surveys accurately reflect site-specific eagle exposure, rather than representing random anomallies.  At two of four sites where Bayesian estimates were lower than site-specific estimates, the observed fataility estimate fell outside of the bayesian 80th percentile using priors, but was covered by the 80th percentile of the site-specific estimate.  These sites reported 2 of the top 3 eagle exposure rates, and illustrate instances where site-specific information should carry more weight.  In both cases, survey effort was in the lower 25% of all sites. 
 
-An important question is when do priors significantly overpredict (bad because of undue restrictions on developers) versus underpredict (bad because more eagles will be taken).
+Permits are re-evaluated every 5 years.  Thus, the mean observed discrepancy of `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 0)` fatalities per year could equate to the unexpected take of an additional `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE))*5, 0)` eagles before models are updated.  FWS advises that if permitted eagle take exceeds 1% of the estimated population size of either species within the LAP area, additional take is a concern.  If take exceeds 5% of the estimated population size within the LAP area, additional take is considered inadvisable.  Cummulative authorized take must not exceed 5% of local populations.  Underestimating eagle take by a few individuals per year over a 5 year permit, could approach these thresholds.  The inverse is not ideal from the perspective of regulated entities, as wind developers could pay mitigation costs for an unwarranted 5 additional incidental takes. 
 
-If permitted eagle take exceeds 1% of the estimated population size of either species within the LAP area, additional take is a concern.  If take exceeds 5% of the estimated population size within the LAP area, additional take is considered inadvisable.  We must fin that cummulative authorized take does not exceed 5%.
-
-Permits are re-evaluated every 5 years.  Thus, the mean observed discrepancy of `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 0)` fatalities per year could equate to either mitigation paid for , or the unexpected take of an adidtional 1100 eagles before models are updated.
+Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.
 
 # Methods
 
