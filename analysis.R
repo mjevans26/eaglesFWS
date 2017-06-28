@@ -1,17 +1,16 @@
+source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
 site_preds <- vapply(1:nrow(Bay16), function(x) {
-
- a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
- b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
+ a <- sum(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
+ b <- sum(Bay16$EFFORT) + Bay16$EFFORT[x]
  out <- prediction(10000, a, b)
  fatality <- mean(out$fatality*Bay16$SCALE[x])
  q80 <- quantile(out$fatality*Bay16$SCALE[x], c(0.1, 0.9))
 
- out2 <- prediction(10000, a-mean(Bay16$FLIGHT_MIN), b-mean(Bay16$EFFORT))
+ out2 <- prediction(10000, a-sum(Bay16$FLIGHT_MIN), b-sum(Bay16$EFFORT))
  fatality2 <- mean(out2$fatality*Bay16$SCALE[x])
  q82 <- quantile(out2$fatality*Bay16$SCALE[x], c(0.1, 0.9))
  return (c(fatality, q80[1], q80[2], fatality2, q82[1], q82[2]))
-
-}, USE.NAMES = FALSE, FUN.VALUE = c(0,0,0,0,0,0))
+}, USE.NAMES = FALSE, FUN.VALUE = c(0,0,0,0,0,0,0,0))
 
 Bay16$MN_F <- site_preds[1,]
 Bay16$LQ_F <- site_preds[2,]
@@ -19,18 +18,19 @@ Bay16$UQ_F <- site_preds[3,]
 Bay16$MN <- site_preds[4,]
 Bay16$LQ <- site_preds[5,]
 Bay16$UQ <- site_preds[6,]
+Bay16$U_F <- site_preds[7,]
+Bay16$U <- site_preds[8,]
 
 #function to return mean and 80% CI estimates from a predicted fatality distribution
 #hardwired to use Bay16 data as exposure priors
 estimates <- function(niters, a, b){
-  out <- prediction(niters, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+  out <- prediction(niters, a+sum(Bay16$FLIGHT_MIN), b+sum(Bay16$EFFORT))
   fatality <- mean(out$fatality)
   q80 <- quantile(out$fatality, c(0.1, 0.9))
   out2 <- prediction(10000, a, b)
-  fatality2 <- mean(out2$fatality)
-  q82 <- quantile(out2$fatality, c(0.1, 0.9))
-  return (c("MN_F" = fatality, "LQ_F" = q80[1], "UQ_F" = q80[2],
-            "MN" = fatality2, "LQ" = q82[1], "UQ" = q82[2]))
+  #fatality2 <- mean(out2$fatality)
+  q82 <- quantile(out2$fatality, 0.8)
+  return (c("U_F" = q80, "U" = q82))
 }
 
 #cretae simulated eagle flight observation and survey data
@@ -38,16 +38,30 @@ estimates <- function(niters, a, b){
 #1hr per plot per month for two years
 #survey plot of 0.8km radius * 0.2km height
 
-flight <- seq(0, 1000, 50)
+flight <- c(0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.15,0.20,0.25,0.50,0.75,1.00,1.50,2.00,2.50,3)
 time <- seq(1, 10, 1)*12*2
 area <- seq(0.402, 2.01, 0.402)
-df <- expand.grid(TIME = time, AREA = area, a = flight)
+df <- expand.grid(TIME = time, AREA = area, eagle_rate = flight)
 df$b <- df$TIME*df$AREA
+df$a <- df$eagle_rate*df$b
+
+uppers <- vapply(1:nrow(df), function(x) {
+  a <- df$a[x]
+  b <- df$b[x]
+  out <- prediction(10000, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+  q80 <- quantile(out$fatality, 0.8)
+  out2 <- prediction(10000, a, b)
+  q82 <- quantile(out2$fatality, 0.8)
+  return (c("U_F" = q80, "U" = q82))
+}, USE.NAMES = FALSE, FUN.VALUE = c(0,0))
 
 #create dataset of estimated fatality distributions based on simulated
 #survey and flight observation data
-sim <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
+
+sim2 <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
+
 colnames(sim)[c(4,5,7,8)] <- c("LQ_F", "UQ_F", "LQ", "UQ")
+sim$eagle_rate <- flight
 
   plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(UQ_F-LQ_F),
@@ -114,23 +128,24 @@ plot_ly(sim)%>%
             marker = list(line = list(color = "black"),
                           sizemode = "diameter",
                           colorbar = list(y = 0.75, x = 0.85,
-                                          title = "Survey Effort")
+                                          title = "Eagle Activity<br>Rate")
             ),
-            sizes = c(5,15), color = ~ a, name = "Estimated Eagle Fatalities",
-            text = ~paste(round(b,3)),
+            sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = "text")%>%
   add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)), type = "scatter", mode = "lines", name = "1:1 Line")%>%
+  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004), type = "scatter", mode = "lines", name = "Mean")%>%
   layout(hovermode = "closest", font = list(color = "black"),
          xaxis = list(title = "Estimates using Priors"),
          yaxis = list(title = "Estimates without Priors"),
          legend = list(x = 0.10, y = 0.95, bordercolor = "black", borderwidth = 1))
 
-plot_ly(sim[sim$a != 50, ])%>%
-  add_trace(x = ~b, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
-            color = ~ a,
+plot_ly(sim)%>%
+  add_trace(x = ~b, y = ~(MN_F-MN), type = "scatter", mode = "markers",
+            color = ~ eagle_rate,
             marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
             ),
-            text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a), "hr*km<sup>3</sup>",
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = 'text')%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
@@ -141,7 +156,7 @@ plot_ly(sim[sim$a != 50, ])%>%
 
 plot_ly(sim)%>%
   add_trace(x = ~b, y = ~UQ_F-LQ_F, type = "scatter", mode = "markers",
-            color = ~ a,
+            color = ~ eagle_rate,
             marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
             ),
             text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a), "hr*km<sup>3</sup>",
@@ -154,7 +169,7 @@ plot_ly(sim)%>%
   )
 
 plot_ly(sim)%>%
-  add_trace(x = ~a, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
+  add_trace(x = ~eagle_rate, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
             color = ~ b,
             marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
             ),
@@ -181,4 +196,19 @@ plot_ly(sim)%>%
          yaxis = list(title = "Size of 80% CI")
   )
 
+plot_ly(sim)%>%
+  add_trace(x = ~(eagle_rate - 1.099637)/0.1094509,
+            y = ~(MN_F-MN), type = "scatter", mode = "markers",
+            color = ~ b,
+            marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
+            ),
+            text = ~paste("Effort =", round((eagle_rate - 1.099637)/0.1094509, 3), "<br>Eagles =", MN_F-MN), "hr*km<sup>3</sup>",
+            hoverinfo = 'text')%>%
+  layout(hovermode = 'closest',
+         font = list(color = 'black'),
+         xaxis = list(title = "Eagle Rate Z-score"
+         ),
+         yaxis = list(title = "Discrepancy")
+  )
+glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 

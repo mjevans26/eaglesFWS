@@ -14,7 +14,7 @@ output:
 runtime: shiny
 ---
 
-```{r global, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
 library(dplyr)
@@ -27,8 +27,20 @@ library(viridis)
 
 load("app_data.RData")
 source("helper_fxns.R")
-source("exposure.R")
-source("fatality.R")
+#source("exposure.R")
+#source("fatality.R")
+
+prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  
+                      rate = mean(Bay16$EFFORT)),
+               from = 0.5,
+               to = 2)
+
+collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), 
+                   from = 0, 
+                   to = 0.01)
+
+act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
+
 
 ```
 
@@ -36,7 +48,7 @@ Inputs {.sidebar}
 -----------------------------------------------------------------------
 The [U.S. Fish and Wildlife Service](https://www.fws.gov/)
 uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
-This approach combines prior information about eagle collision rates and exposure across existing wind farms, with surveys of eagle activity at proposed sites to estimate the likely number of fatalities.
+This approach combines prior information about eagle collision and activity rates across existing wind farms, with surveys of eagle activity at proposed sites to estimate the likely number of fatalities.
 
 This dashboard allows you to explore how priors interact with survey data to produce predicted eagle fatalities at a set of wind energy sites.
 
@@ -44,7 +56,13 @@ This dashboard allows you to explore how priors interact with survey data to pro
 selectInput("sites", 
             "Choose a Site", 
             choices = c("", levels(Bay16$SITE)), 
-            selected = NULL)
+            selected = "Combine Hills, Oregon")
+
+cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
+cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
+cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
+a <- reactive({mean(Bay16$FLIGHT_MIN) + cur_min()})
+b <- reactive({mean(Bay16$EFFORT) + cur_effort()})
 ```
 
 
@@ -65,38 +83,10 @@ actionButton("calculate", "Calculate Fatalities")
 helpText("Note: Calcuating predicted fatality distributions takes time.  Please allow several seconds for the graph to load.")
 ```
 
-Column {data-width=500}
--------------------------------------------------------------------------
-
-### Survey Data
-
-```{r datatable, echo = FALSE}
-tab <- select(Bay16, 
-                    SITE, TURBINES, 
-                    EFFORT, FLIGHT_MIN)
-DT::renderDataTable({
-dt <- DT::datatable(tab,
-                    fillContainer = TRUE,
-                    selection = list(mode = 'single', 
-                                     selected = which(Bay16$SITE == input$sites), 
-                                     target = 'row'),
-                    colnames = c("Site", "Turbines", "Survey Effort (hr*km2)",
-                                 "Eagle Obs (min)"),
-                  options = list(rownames = FALSE,
-                                 pageLength = nrow(tab),
-                                 dom = 'tip'
-                                 )
-                )%>%
-  formatRound("EFFORT", 2)
-})
-```
-
-> Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).
-
 Column {data-width = 500}
 --------------------------------------------------------------------------
 
-### Prior Distribution of Collision Rates
+### Prior Probabilities of Eagle Collision Rates
 
 ```{r collisions, echo = FALSE}
 renderPlotly({
@@ -115,22 +105,129 @@ renderPlotly({
              yaxis = list(title = "Probability Density"))
 })
 
+#ggplot(Bay16, aes(x = EFFORT, y = OBS_MIN))+
+#  geom_point()
+#renderPlotly({
+#ggplotly()
+#})
 ```
 
-### Eagle Exposure
+### Eagle Activity (_Click 'Update Distributions'_)
 
 ```{r exposures, echo = FALSE}
+observeEvent(input$update, {
+  act <- isolate({cur_min()/cur_effort()})
+  obs <- isolate({density(rgamma(10000, 
+                                 shape = a(), 
+                                 rate = b()
+                                 )
+                          )
+    })
+  
+output$exposure <- renderPlotly({ 
+    plot_ly()%>%
+      add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))),
+                type = "scatter", mode = "lines",
+                name = "Observed", line = list(color = vir_col(3)[2]),
+                text = ~paste("Observed Activity<br>at site = ",
+                              round(act,2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = prior$x, y = prior$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Prior", line = list(color = vir_col(3)[1]),
+                text = ~paste("Prior Activity<br>estimate = ",
+                              round(prior$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = ~obs$x, y = ~obs$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Combined", line = list(color = vir_col(3)[3]),
+                text = ~paste("Combined Activity<br>estimate = ",
+                              round(obs$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      layout(#title = "Eagle Exposure",
+             xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)",
+                          range = c(0,3)),
+             yaxis = list(title = "Probability Density"))
+   })
 
-exposure(input, output, session)
+})
+
 plotlyOutput("exposure")
 ```
 
-> Observed exposure is the value measured at a site during pre-construction surveys.
+> Activity is the number of minutes eagles are observed flying within survey areas, per hour.
 
-### Predicted Fatalities
+### Predicted Fatalities (_Click 'Predict Fatalities'_)
 
 ```{r fatalities, echo = FALSE}
+observeEvent(input$calculate,{
+  if(input$sites != ""){
+    out <- isolate({prediction(10000, a(), b())})
+    fatality <- isolate({density(out$fatality*cur_scale())})
+    q80 <- isolate({quantile(out$fatality, c(0.1, 0.9))})
 
-fatality(input, output, session)
-plotlyOutput("fatal")
+    out2 <- isolate({prediction(10000, a()-mean(Bay16$FLIGHT_MIN),
+                                b()-mean(Bay16$EFFORT))})
+    fatality2 <- isolate({density(out2$fatality*cur_scale())})
+    q82 <- isolate({quantile(out2$fatality, c(0.1, 0.9))})
+    
+output$fatality <- renderPlotly({
+        plot_ly()%>%
+          add_trace(x = ~fatality$x, y = ~fatality$y, type = "scatter", mode = "lines",
+                    fill = "tozeroy",
+                    name = "Incl. Prior Exposure", line = list(color = vir_col(3)[3]),
+                    text = ~paste("Predicted fatalities<br>incorporating prior = ",
+                                  round(fatality$x, 2),
+                                  sep = ""),
+                    hoverinfo = "text")%>%
+          add_trace(x = ~fatality2$x, y = ~fatality2$y, type = "scatter", 
+                    mode = "lines",
+                    fill = "tozeroy",
+                    line = list(color = vir_col(3)[2]), 
+                    name = "Using Site Survey Only",
+                    text = ~paste("Predicted fatalities<br>from site survey = ",
+                                  round(fatality2$x, 2),
+                                  sep = ""),
+                    hoverinfo = "text")%>%
+          layout(##title = "Predicted Annual Eagle Fatalities",
+                 xaxis = list(title = "Fatalities per Year",
+                              range = c(0,20)),
+                 yaxis = list(title = "Probability Density"),
+                 legend = list(x = 0.7,
+                               y = 1))
+    })
+  }
+})
+plotlyOutput('fatality')
 ```
+
+Column {data-width=500}
+-------------------------------------------------------------------------
+
+### Survey Data
+
+```{r datatable, echo = FALSE}
+tab <- select(Bay16, 
+                    SITE, TURBINES, 
+                    EFFORT, FLIGHT_MIN)
+DT::renderDataTable({
+dt <- DT::datatable(tab,
+                    fillContainer = TRUE,
+                    selection = list(mode = 'single', 
+                                     selected = which(Bay16$SITE == input$sites), 
+                                     target = 'row'),
+                    colnames = c("Site", "Turbines", "Survey Effort (hr*km3)",
+                                 "Eagle Obs (min)"),
+                  options = list(rownames = FALSE,
+                                 pageLength = nrow(tab),
+                                 dom = 'tip'
+                                 )
+                )%>%
+  formatRound("EFFORT", 2)
+})
+```
+
+> Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).

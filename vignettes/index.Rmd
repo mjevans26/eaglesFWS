@@ -27,27 +27,118 @@ load("data/data.RData")
 
 tab <- select(Bay16,SITE, TURBINES, EFFORT, FLIGHT_MIN)
 
+prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  
+                      rate = mean(Bay16$EFFORT)),
+               from = 0.5,
+               to = 2)
+
+collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), 
+                   from = 0, 
+                   to = 0.01)
+
+act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
+demo <- curve(dnorm(x, 5, 1), from = 0, to = 10)
+ef <- curve(-22560 + (2306*x) + (-2.607*x^2), from = 0, to = 400)
 ```
 
-# Introduction
+# Background
 
-The U.S. Fish and Wildlife Service (FWS) uses a bayesian framework to develop a statisticl model predicting eagle collisions, and fatalities, at proposed wind energy sites.  The appeal of Bayesian modeling is the ability to incorporate prior information and uncertainty regarding parameter values into posterior estimates, ideally a closer representation of reality.  However, as Bayesian methodology is less familiar , there remains confusion over how this prior information functions.  Additionally, .  The purpose of this paper is to illustrate and quantify the effects of prior on the predicted outcomes of the eagle motality model, in terms of .  We use both empirical data from Bay et al. (2016), as well as a simulated dataset to demonstrate these effects both in theory and in practice.
+The U.S. Fish and Wildlife Service (FWS) uses a Bayesian framework to predict eagle collisions and fatalities at proposed wind energy sites.  One of the appeals of Bayesian modeling is the ability to incorporate prior information and uncertainty regarding parameter values into estimates, ideally providing a better representation of reality.  However, there is still debate over the appropriate choice and use of priors. Additionally, as Bayesian methodology is still gaining widespread familiarity, the ways in which prior information affects model outcomes can be unclear.  
 
-# Methods
+The purpose of this paper is to illustrate and quantify the effects of Bayesian priors used by FWS on the predicted outcomes of the eagle mortality model, in terms of predicted eagle fatalities.  We use both empirical data from wind farms provided in a study presenting the methods used by FWS to implement the Bayesian prediction model (Bay et al. 2016), as well as a simulated dataset to demonstrate these effects both in theory and in practice.
 
-### Empirical Data
+Fully understanding the effects of priors is relevant to both energy developers and wildlife conservationists, because estimates of eagle take are used to determine permitting and mitigation costs.
 
-We used an empirical dataset from Appendix A in Bay et al. (2016), presenting pre-construction eagle survey data from 26 wind energy sites.  We calculated survey effort as the survey area in km
+# Bayesian Model
+
+The components of the Bayesian model used by FWS to predict eagle fatality are:
+
+- **Eagle Exposure Rate**: minutes per hour that eagles are estimated to fly within risk areas around turbines where collisions may occur. 
+- **Collision Rate**: probability an eagle flying within a turbine risk area is struck and killed.
+- **ExpansionFactor**: constant converting fatality rate to annual fatalities, based on the size of a wind facility.
+
+These parameters are represented as probability distributions, and combined to produce a posterior distribution representing the relative likelihood of how many ealges will be killed annually at a site.
+
+$Fatalities = Exposure * Collision Rate * Expansion$
+
+```{r demo, echo = FALSE, warning = FALSE, error = FALSE}
+
+fluidPage(
+  fluidRow(
+#    column(4,
+#           plot_ly()%>%
+#  add_trace(x = ~collision$x, y = ~collision$y, type = "scatter", mode = "lines",
+#            fill = "tozeroy", name = "Prior", line = list(color = "grey"),
+#            hoverinfo = "none")%>%
+#      layout(title = "Collision",
+#             xaxis = list(title = "Collision Rate"),
+#             yaxis = list(title = "Probability",
+#                          showticklabels=FALSE)
+#             )
+#    ),
+#  column(4,
+#         plot_ly()%>%
+#          add_trace(x = prior$x, y = prior$y,
+#                type = "scatter", mode = "lines", fill = "tozeroy",
+#                name = "Prior", line = list(color = vir_col(3)[1]),
+#                hoverinfo = "none")%>% 
+#           layout(title = "Exposure",
+#             xaxis = list(title = "Exposure Rate"),
+#             yaxis = list(showticklabels = FALSE,
+#                          title = NA)
+#             )
+#         ),
+  column(12, 
+         plot_ly()%>%
+           add_trace(x = ~demo$x, y = ~demo$y, type = "scatter",
+                     mode = "lines", fill = "tozeroy", line = list(color = "grey"),
+                     showlegend = FALSE,
+                     hoverinfo = "none")%>%
+           add_trace(x = ~c(mean(rnorm(10000, 5, 1)), mean(rnorm(10000, 5, 1))),
+                     y = ~ c(0, max(demo$y)),
+                     type = "scatter", mode = "lines", name = "Mean",
+                     hoverinfo = "none")%>%
+           add_trace(x = ~c(quantile(rnorm(10000, 5, 1), 0.8),
+                            quantile(rnorm(10000, 5, 1), 0.8)),
+                     y = ~ c(0, max(demo$y)), type = "scatter", mode = "lines",
+                     name = "80th Percentile", hoverinfo = "none")%>%
+           layout(
+             title = "Predicted Eagle Fatalities",
+             xaxis = list(title = "Eagle Fatalities"),
+             yaxis = list(showticklabels = FALSE,
+                          title = "Probability"),
+             legend = list(x = 0.7, y = 0.9)
+           )
+         )
+  ),
+    fluidRow(
+    column(12,
+      p(class = "caption",
+        tags$b("Figure 1."), " Demonstration output of Bayesian eagle fatality model.")
+    )
+  )
+)
+```
+
+  To be conservative, FWS uses the 80th percentile of this posterior distribution in setting take limits, and we display these values unless otherwise noted.
+
+In this paper, we focus on eagle exposure rate, as this parameter is subject to both site-specific survey data, and a Bayesian prior distribution.  The expansion factor is determined completely by the characteristics of a site.  Similarly, the collision rate is estimated entirely by a prior distribution based on rates observed at existing wind facilities.  
+
+### Survey Data
+
+The data shown in Table 1 are the key values used as inputs for the eagle wind mortality model.  These were derived from an empirical dataset (Appendix A in [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)), which contains pre-construction eagle survey data from 26 wind energy sites.  Survey effort indicates the amount of time and area covered during pre-construction surveys, and eagle observations are the duration of time over which eagles were observed flying within survey areas.  
 
 ```{r p1, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
   fluidRow(
     column(12,
       p(class = "caption",
-        "Table 1. Data from Bay et al. (2016).  Effort was calculated as the product of survey area (km) and observation time (hr), derived from Appendix A.")
+        tags$b("Table 1."), " Data from Bay et al. (2016).  Effort was calculated as the product of survey area (km", tags$sup("2"),") and observation time (hr),
+        derived from Appendix A.")
     )
   ),
   fluidRow(
+    div(
     column(12,
   DT::datatable(tab,
                     fillContainer = TRUE,
@@ -62,39 +153,109 @@ fluidPage(
                                  )
                 )%>%
   DT::formatRound("EFFORT", 2)
+    ))
+  )
+)
+```
+<br><br>
+
+### Combining Prior Information with Survey Data
+
+Eagle flight time and survey effort are used to estimate eagle exposure at a given wind site. Figure 2 shows how the measured exposure (green lines) is integrated with a consistent prior distribution of exposure probabilities (purple), to produce a probability distribution of exposure (yellow).  This resulting distribution is used as the exposure rate to predict eagle fatalities at a site.  The effect of the prior distribution is to modify extreme observed values that differ greatly from mean observations across a larger sample of sites.
+
+```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
+
+plotList <- function(x){
+  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
+  b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
+  act <- Bay16$FLIGHT_MIN[x]/Bay16$EFFORT[x]
+  obs <- density(rgamma(10000, shape = a, rate = b))
+  site <- Bay16$SITE[x]
+
+  plot_ly()%>%
+      add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))),
+                type = "scatter", mode = "lines",
+                name = "Observed", line = list(color = vir_col(3)[2]),
+                text = ~paste("Observed Activity<br>at site = ",
+                              round(act,2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = prior$x, y = prior$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Prior", line = list(color = vir_col(3)[1]),
+                text = ~paste("Prior Activity<br>estimate = ",
+                              round(prior$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = ~obs$x, y = ~obs$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Combined", line = list(color = vir_col(3)[3]),
+                text = ~paste("Combined Activity<br>estimate = ",
+                              round(obs$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      layout(#title = site,
+        showlegend = FALSE,
+        yaxis = list(showticklabels = FALSE),
+        xaxis = list(range = c(0,3))
+             )
+}
+
+
+fluidPage(
+  fluidRow(
+    column(12,
+           subplot(lapply(1:16, plotList), 
+        nrows = 4, shareY = TRUE, titleY = FALSE, shareX =TRUE,titleX= FALSE)%>%
+  layout(xaxis = list(title = "Eagle Exposure (min/km<sup>3</sup>*hr)",
+                      align = "center"),
+         yaxis = list(title = "Probability",
+                      showticklabels = FALSE,
+                      align = "center")
+         )
+    )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        tags$b("Figure 2."), " Eagle exposure rates used to estimate predicted fatalities
+        across from a sample of wind farms.  A consistent prior probability distribution (purple) is combined with site-specific
+        survey data (green line) to estimate a distribution of exposure probabilities for a
+        proposed project (yellow).")
     )
   )
 )
 ```
 
-<p style='font-size:small'>Source: [Gerber, LR (2016). PNAS 113(13): 3563-3566](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p> 
 
-The influence of eagle exposure priors on estimated eagle fatalities was less for wind energy projects that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates.  The use of prior exposure information produced a higher estimate of eagle take at a majority of sites (Fig. 1) than would have been produced using site-survey data only.  
+### Using Priors Changes Estimates
+
+At the majority of sites, the Bayesian estimate of eagle fatalities using prior exposure information was higher than a site-specific estimate (Fig. 2). These instances are indicated by points above the 1:1 line in Figure 2.  The influence of eagle exposure priors on estimated eagle fatalities was less at facilities that expended greater effort on pre-construction surveys.  This pattern is indicated by the sites with the most intensive surveys falling closest to a 1:1 relationship between the two estimates (Fig. 2).   
 
 ```{r p2, echo=FALSE, warning=FALSE, error=FALSE}
 fluidPage(
   fluidRow(
     column(12,
            plot_ly(Bay16)%>%
-             add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", 
-                       size = ~(UQ_F-LQ_F),
+             add_trace(y = ~U_F*SCALE, x = ~U*SCALE, type = "scatter", mode = "markers", 
+                       size = ~((UQ_F*SCALE)-(LQ_F*SCALE)),
                        marker = list(line = list(color = "black"),
                             sizemode = "diameter",
                             colorbar = list(y = 0.75, x = 0.85,
-                                            title = "Survey Effort")
+                                            title = "Survey Effort<br>hr*km<sup>3</sup>")
                             ),
               sizes = c(10,25), color = ~ EFFORT, name = "Estimated Eagle Fatalities",
-                            text = ~paste("Effort =", round(EFFORT,2),
-                                          "hr*km<sup>3</sup>",
-                                          "<br>80% CI =", round(LQ_F, 2),"-",
-                                          round(UQ_F,2)), 
+              text = ~paste("Site =", SITE, "<br>Effort =", round(EFFORT,2),
+                            "hr*km<sup>3</sup>", "<br>Prediction w/Priors =", 
+                            round(U_F*SCALE, 2),
+                            "<br>Prediction w/o Priors =", round(U*SCALE, 2)),
               hoverinfo = "text")%>%
-             add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)), type = "scatter",
+             add_trace(x = ~c(0, max(U_F*SCALE)), y = ~c(0, max(U_F*SCALE)), type = "scatter",
                        mode = "lines", name = "1:1 Line")%>%
              layout(hovermode = "closest", font = list(color = "black"),
-                    xaxis = list(title = "Estimates using Priors"),
-                    yaxis = list(title = "Estimates without Priors"),
-                    legend = list(x = 0.10, y = 0.95, bordercolor = "black",
+                    yaxis = list(title = "Estimates using Priors"),
+                    xaxis = list(title = "Estimates without Priors"),
+                    legend = list(x = 0.4, y = 0.9, bordercolor = "black",
                                   borderwidth = 1)
                     )
     )
@@ -102,65 +263,148 @@ fluidPage(
   fluidRow(
     column(12,
       p(class = "caption",
-        "Figure 1. Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the mean of the posterior distributions.  Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
+        tags$b("Figure 3."), "Relationships between estimated eagle fatalities produced incorporating prior information about eagle exposure at wind facilities, and those produced using only site-specific survey data.  Plotted values are the 80th percentiles of the posterior distributions.  Marker size is proportional to the size of the 80% CI produced from the posterior distribution using exposure priors.")
     )
   )
 )
 ```
 
-<p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
+<p style='font-size:small'>Source: [Bay et al. (2016)](http://www.pnas.org/content/113/13/3563.full?tab=ds)</p>
 
-### Simulation Study
+# Simulation Study
 
-To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible values for survey plot area, survey time, and eagle observations.  We based these values on the minimum requirements provides by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, our minimum simulated values for survey area and time were `r min(area)` km3, and `r min(time)` hrs, respectively.  We increments of one survey plot, up to five plots (area = `r max(area)`), and  `r max(time)` hrs, and generated a range of survey efforts forom all combinations.  Finally, we used the maximum observed value for eagle flight time in minutes, to generate a range of values from 0, incrementing by 50.  The final simulation data included 1050   
+To investigate the effects of prior information and survey effort on predicted take, we created a dataset representing a range of possible pre-construction survey values for survey area, time, and eagle observations.   
 
-```{r eval = FALSE}
-flight <- seq(0, 1000, 50)
-time <- seq(1, 10, 1)*12*2
-area <- seq(0.402, 2.01, 0.402)
-df <- expand.grid(TIME = time, AREA = area, a = flight)
+### Prediction Discrepancies Increase at Extreme Values
+For eagle exposure rates < 1.1 min/hr*km^3^, predicted fatlity rates estimated using priors were higher than site-specific estimates (i.e. above the 1:1 line in Fig. 3).  This pattern reversed when exposure was > 1.1.  The threshold of 1.1 corresponds to the mean exposure rate of the prior exposure distribution.  The actual value of this threshold is subject to change as prior distributions are updated with new survey data, but the pattern will be consistent.  Figure 4 also illustrates that predicted fatalities estimated with and without priors are more similar when survey effort is greater (i.e., larger circles).
+
+```{r sim1, echo=FALSE, warning = FALSE, error = FALSE}
+fluidPage(
+  fluidRow(
+    column(12,
+
+plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
+  add_trace(x = ~U*mean(Bay16$SCALE), y = ~U_F*mean(Bay16$SCALE), type = "scatter", 
+            mode = "markers", size = ~b,
+            marker = list(line = list(color = "black"),
+                          sizemode = "diameter",
+                          colorbar = list(y = 1, x = 0.1,
+                                          title = "Eagle Exposure<br>Rate")
+            ),
+            sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>",
+                          "<br>Exposure =", eagle_rate, "min"),
+            hoverinfo = "text")%>%
+  add_trace(x = ~c(0, max(U_F*mean(Bay16$SCALE))), y = ~c(0, max(U_F*mean(Bay16$SCALE))),
+            type = "scatter", mode = "lines", name = "1:1 Line")%>%
+#  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004),
+#            type = "scatter", mode = "lines", name = "Mean")%>%
+  layout(hovermode = "closest", font = list(color = "black"),
+         xaxis = list(title = "Estimates without Priors"),
+         yaxis = list(title = "Estimates using Priors"),
+         legend = list(x = 0.6, y = 0.3, bordercolor = "black", borderwidth = 1)
+         )
+
+           )
+  ),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        tags$b("Figure 4."), "Discrepancy between Bayesian and site-specific estimates of eagle fatalities, as a function of distance between the observed and prior mean of exposure rate. Values were generated from simulated data.  A z-score of zero equates to an observed exposure rate equal to the mean of the exposure prior.")
+    )
+  )
+)
 ```
 
-We then predicted at each combination of survey effort and eagle observation values, and report the mean, and 80% quantiles of the posterior distributions.  To generate predictions, we used the updated FWS priors for collision rate (XXX), and a.  FWS service uses a scaling factor based on the size, and hours of operation of a wind farm, to translate these per km3 estimates into predicted annual number of eagle fatalities. 
+The prior distribution of exposure probabilities has a greater effect on estimates when observed exposure rate at a site is farther from the mean of the prior.  Figure 5 illustrates this relationship in terms of how many standard deviations an observed exposure rate was from the prior mean .  At one standard deviation above or below the mean, take estimates can differ by as much as 0.1 eagles per year.
 
-# Results
+```{r echo = FALSE, warning = FALSE, error = FALSE}
+fluidPage(
+  fluidRow(
+plot_ly(sim)%>%
+  add_trace(x = ~(eagle_rate - 1.099637)/0.1094509, 
+            y = ~(U_F-U)*mean(Bay16$SCALE), type = "scatter", mode = "markers",
+            color = ~ b,
+            marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
+            ),
+            text = ~paste("Effort =", round(b, 3), "<br>Z =",
+                          round((eagle_rate - 1.099637)/0.1094509, 2),
+                          "<br>Discrepancy =", round((U_F-U)*mean(Bay16$SCALE), 2)),
+            hoverinfo = 'text')%>%
+  layout(hovermode = 'closest',
+         font = list(color = 'black'),
+         xaxis = list(title = " Difference between Observed Exposure and Prior Mean (standard deviations)"
+         ),
+         yaxis = list(title = "Fatality Estimate Discrepancy")
+  )
+),
+  fluidRow(
+    column(12,
+      p(class = "caption",
+        tags$b("Figure 5."), "Difference between Bayesian and site-specific eagle fatality estimates as a function of distance of observed eagle exposure from prior exposure mean.  Plotted values are the 80th percentile of the posterior distributions.")
+    )
+  )
+)
+```
 
 ### Greater Survey Effort Reduces Effect of Priors
 
-Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.   
+Increased survey effort reduced the influence of prior distributions of exposure probability on estimates of fatalities, resulting in less discrepacy between predictions obtained using priors and those obtained using site survey data only.  The magnitude of the effect of effort on estimate discrepancy was contingent upon the observed eagle exposure rate. This discrepancy decreased exponentially with greater survey effort. Similarly, the size of 80% CI from posterior estimates decreased as survey efforts increase (Fig. 6), indicating less uncertainty around fatality predictions. 
 
-```{r p3, echo=FALSE, warning=FALSE, error=FALSE}
+```{r p3, echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
+#sim$b2 <- sim$b^2
+dev <- glm(data = sim, (MN_F - MN) ~ b*eagle_rate, family = gaussian(link = "inverse"))
+dev_max <- glm(data = sim, (MN_F - MN)~ b, subset = eagle_rate == max(eagle_rate), 
+               family = gaussian(link = "inverse"))
+dev_min <- glm(data = sim, (MN_F - MN)~ b, subset = eagle_rate == min(eagle_rate), 
+               family = gaussian(link = "inverse"))
+int <- glm(data = sim, (UQ_F-LQ_F)~ b * eagle_rate)
+
+
 fluidPage(
   fluidRow(
     column(6,
   plot_ly(sim)%>%
-  add_trace(x = ~ b, y = ~(MN_F-MN)/MN, type = "scatter", mode = "markers",
-            color = ~ a, marker = list(colorbar = list(showscale = FALSE)),
-            text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a,
-                          "hr*km<sup>3</sup>"),
+  add_trace(x = ~ b, y = ~(U_F*mean(Bay16$SCALE) - U*mean(Bay16$SCALE)), 
+            type = "scatter", mode = "markers",
+            color = ~ eagle_rate, marker = list(
+              colorbar = list(title = "Eagle<br>Exposure (min)", y = 0.5, x = 0.8)),
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Exposure =", 
+                          eagle_rate, "min"),
+            hoverinfo = 'text',
+            showlegend = FALSE)%>%
+    add_trace(x = ~c(10, 10), 
+              y = ~c(min(U_F - U)*mean(Bay16$SCALE), max(U_F - U)*mean(Bay16$SCALE)), 
+              type = "scatter", mode = "lines", name = "FWS Minimum")%>%
+  layout(hovermode = 'closest',
+         font = list(color = 'black'),
+         xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
+         ),
+         yaxis = list(title = "fatality Estimate Discrepancy"),
+         legend = list(x = 0.6, y = 0.9)
+  )
+    ),
+  column(6,
+
+plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
+  add_trace(x = ~b, y = ~(UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers",
+            color = ~ eagle_rate,
+            marker = list(colorbar = list(colorbar = list(showscale = FALSE))
+            ), showlegend = FALSE,
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>",
+                          "Exposure =", eagle_rate , "min"
+            ),
             hoverinfo = 'text')%>%
+#      add_trace(x = ~c(10, 10), y = ~c(min(UQ_F-LQ_F), max(UQ_F-LQ_F)),
+#                type = "scatter",
+#                mode = "lines", name = "FWS Minimum<br>Survey Effort",
+#                showlegend = FALSE)%>%
   hide_colorbar()%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
          ),
-         yaxis = list(title = "Standardized Deviance")
-  )
-    ),
-  column(6,
-
-plot_ly(sim)%>%
-  add_trace(x = ~b, y = ~UQ_F-LQ_F, type = "scatter", mode = "markers",
-            color = ~ a,
-            marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
-            ),
-            text = ~paste("Effort =", round(b, 3), "<br>Eagles =", a), "hr*km<sup>3</sup>",
-            hoverinfo = 'text')%>%
-  layout(hovermode = 'closest',
-         font = list(color = 'black'),
-         xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
-         ),
-         yaxis = list(title = "Size of 80% CI")
+         yaxis = list(title = "Relative Size of 80% CI")
   )
 
     )
@@ -168,45 +412,119 @@ plot_ly(sim)%>%
   fluidRow(
     column(12,
       p(class = "caption",
-        "Fig. #. Use the dropdown button to see total annual appropriations.")
+        tags$b("Figure 6."), " Effects of survey effort on a) difference between fatalities predicted with and without prior exposure information, and b) the size of the 80% CI of the predicted fatality distribution, relative to the mean.")
     )
   )
 )
 
 
 ```
-<p style='font-size:small'><sup>*</sup>Per species budget calculated as total appropriations divided by the number of listed species.</p>
-<p style='font-size:small'>Source: [FWS Budget Justification](https://www.fws.gov/budget/)</p> 
-
-# Discussion
-
-### Federal Agencies Have Been Spending Less on Listed Species
 
 
-# State Spending
+# Conclusions
 
-### Most Spending for ESA Activities Comes From Federal Agencies
+### Primary Takeaways
 
-On average, states spend 26% as much as FWS, and 4% as much as other federal agencies. This pattern has persisted over time. The amount states spend is highly relevant to current discussions about their role in implementing the ESA.
+The use of prior distributions of exposure probability can strongly affect the predicted eagle take at wind energy facilities.  Among 26 wind farms, the average difference between 80^th^ percentiles of Bayesian versus site-specific estimates of eagle fatalities was `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 2)` eagles per year (max = `r round(max((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`, s.d. = `r round(sd((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`).
 
-```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
+Survey effort, and the number of eagles observed at a site change the magnitude of this effect.  At the minimum survey effort required by FWS, the difference in estimates ranged from `r round(min((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` to `r round(max((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` fatalities per year. For a site with minimum eagle exposure rates (0.01 min/hr*km^3^), adding an additional survey hour per month, or survey plot, to the FWS minimum can decrease discrepancy by 0.2 annual fatalities. 
+
+The more observed eagle activity at a site differs from the mean of the prior distribution, the greater the discrepancy between site-specific and Bayesian estimates of predicted fatality.  For every s.d. that an observed exposure rate is greater than the mean of the prior, discrepancy increases by 0.1 eagles.
+
+### Recommendations
+The relationship between deviation of observed exposure rates from the mean of the prior and estimate discrepancy suggest thresholds for trigger points at which FWS may want to consider a different approach to permitting and mitigation, or require additional survey effort.
+
+Increasing minimum survey effort - either number of plots, or number of hours - will reduce the influence of general priors, increasing confidence in the posterior estimates.  This will benefit both wind developers, who can be less skeptical that mitigation requirements are being artificially inflated, and FWS, which can be more confident that Bayesian priors are not underpredicting fatality rates at sites with high eagle activity.
+
+The addition of covariates to the prior distribution of exposure probabilities may also help alleviate the effect of priors on predictions at sites with extreme observed eagle activity.  rather than integrating site specific values with all wind projects, they could be integrated with distributions from sites sharing similar characteristics.
+
+### Discussion
+
+An advantage of Bayesian modeling is to moderate the effect of random outlier observations.  However, this also means that where surveys accurately detect extreme observed eagle activity, this site-specific information can be effectively washed out.  Thus, an important question is when do extreme eagle activity levels observed during surveys accurately reflect site-specific eagle exposure, rather than representing random anomallies.  At two of four sites where Bayesian estimates were lower than site-specific estimates, the observed fataility estimate fell outside of the bayesian 80th percentile using priors, but was covered by the 80th percentile of the site-specific estimate.  These sites reported 2 of the top 3 eagle exposure rates, and illustrate instances where site-specific information should carry more weight.  In both cases, survey effort was in the lower 25% of all sites. 
+
+Permits are re-evaluated every 5 years.  Thus, the mean observed discrepancy of `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 0)` fatalities per year could equate to the unexpected take of an additional `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE))*5, 0)` eagles before models are updated.  FWS advises that if permitted eagle take exceeds 1% of the estimated population size of either species within the LAP area, additional take is a concern.  If take exceeds 5% of the estimated population size within the LAP area, additional take is considered inadvisable.  Cummulative authorized take must not exceed 5% of local populations.  Underestimating eagle take by a few individuals per year over a 5 year permit, could approach these thresholds.  The inverse is not ideal from the perspective of regulated entities, as wind developers could pay mitigation costs for an unwarranted 5 additional incidental takes. 
+
+Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.
+
+# Methods
+
+### Empirical Data
+
+The prior distribution on eagle exposure used by FWS is a gamma distribution, with shape and rate parameters represented by eagle flight time in minutes, and survey effort in (hr km^3^).  Appendix A in Bay et al. (2016) initially presented survey effort data as plot area in hectares, and observation time in minutes.  We converted these to Survey effort (hr km^3^) by multiplying plot area (ha) by 0.2 km, times the reported observation time converted to hours.
+
+We derived an expansion factor, which was not reported in Bay et al. (2016), to produce fatality estimates in numbers of eagles per year.  We quantified the relationship between 'Flight Risk Area', and predicted 'Collisions per Annuum' reported in Bay using a generalized linear model.  First, we divided Collisions per Annuum reported at each site by the site exposure, and mean of the prior collision rate distribution.  
+
+```{r eval = FALSE}
+glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + RISK_HA^2)
+```
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
+scale <- glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + RISK_HA2)
 fluidPage(
   fluidRow(
-    column(12, "eat poop"
-    )
-  ),
-  fluidRow(
-    column(12,
-      p(class = "caption",
-        "Categories may be turned off/on by clicking on the legend entry.")
-    )
+ plot_ly(Bay16)%>%
+   add_trace(x = ~RISK_HA, y = ~COLLISIONS/(FLIGHT_MIN/EFFORT)/0.002895415, 
+             type = "scatter", hoverinfo = "none")%>%
+   add_trace(x = ef$x, y = ef$y, type = "scatter", mode = "lines",
+             hoverinfo = "none")%>%
+   layout(title = "Expansion Factor",
+          showlegend = FALSE,
+          xaxis = list(title = "Risk Area (ha)"),
+          yaxis = list(title = "Fatalities/Exposure/Collision Rate"))
   )
 )
 ```
 
-<p style='font-size:small'>Source: [FWS Expenditure Reports](https://www.fws.gov/Endangered/esa-library/index.html)</p>
+The coefficients from this model were then used as the expansion factor for each site.  Thus we calculate the as `r round(scale$coefficients[1], 2)` + `r round(scale$coefficients[2], 2)` * Risk Area + `r round(scale$coefficients[3], 2)` * (Risk Area) ^2^.
 
-<br><br>
+### Simulation Data
+We generated hypothetical values for survey effort based on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  
+
+Observed eagle flight time (min) provided in Bay et al. (2016) is a function of survey effort and eagle activity at a site.  Therefore, to generate a range of potential exposure values (min/hr*km^3^), we divided flight time by effort at each survey site, and took a random sample of 20 values.  The final simulation data included all combinations of survey effort and eagle exposure rate, which we multiplied to obtain flight minutes, producing 1000 values.   
+
+```{r eval = FALSE}
+flight <- c(0.01,0.02,0.03,0.04,0.05,
+            0.06,0.07,0.08,0.09,0.10,
+            0.15,0.20,0.25,0.50,0.75,
+            1.00,1.50,2.00,2.50,3)
+time <- seq(1, 10, 1)*12*2
+area <- seq(0.402, 2.01, 0.402)
+df <- expand.grid(TIME = time, AREA = area, eagle_rate = flight)
+df$b <- df$TIME*df$AREA
+df$a <- df$eagle_rate*df$b
+```
+
+
+### Model Output
+
+We generated posterior distributions for predicted eagle fatalities using the FWS Bayesian model. We use the updated FWS priors for collision rate, *Collision ~ Beta(9.38, 3224.51)*, and a prior exposure probability distribution defined by the survey data, *Exposure ~ Gamma(a, b)*, where *a* represents observed eagle fligh tminutes, and *b* represents survey effort, following Bay et al. (2016).  We defined *a* and *b* for the exposure prior as the mean values from survey data.  To obtain posterior estimates, we drew 100,000 random samples from each of these distributions and collected their products to form the posterior distribution of eagle fatality rates.
+
+```{r eval = FALSE}
+prediction <- function(iters, alpha, beta){
+ out <- data.frame(collision = rep(NA,iters),
+                   exposure = rep(NA, iters),
+                   fatality = rep(NA, iters)
+                   )
+ for(n in 1:iters){
+   c <- rbeta(1, shape1 = 9.38, shape2 = 3224.51)
+   e <- rgamma(1, shape = alpha, rate = beta)
+   f <- c*e
+   out[n,] <- c(c,e,f)
+ }
+ return(out)
+}
+```
+
+We generated predictions at each survey site using only data from that site, in which case *a* and *b* were set to the observed values, and by updating the prior exposure distribution with observed values by adding the observed values to these means, following Bay et al. (2016).  We applied this same procedure to all 1000 combinations of simulated survey effort and eagle exposure, multiplying the predicted fatality rates by the mean expansion factor derived from survey data to obtain distributions of predicted annual fatalities.  
+
+```{r eval = FALSE}
+#Predictions integrating Exposure prior and survey data
+prediction(100000, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+
+#Predictions from survey data
+prediction(100000, a, b)
+```
+
 
 ------
 

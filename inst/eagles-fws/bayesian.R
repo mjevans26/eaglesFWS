@@ -2,9 +2,9 @@ exposure <- function(input, output, session) {
   cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
   cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
   cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
-  a <- reactive({mean(Bay16$FLIGHT_MIN)+cur_min()})
+  a <- reactive({sum(Bay16$FLIGHT_MIN)+cur_min()})
 
-  b <- reactive({mean(Bay16$EFFORT)+ cur_effort()})
+  b <- reactive({sum(Bay16$EFFORT)+ cur_effort()})
 
   act <- reactive({cur_min()/cur_effort()})
 
