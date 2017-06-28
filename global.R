@@ -33,7 +33,6 @@ prior <- curve(dgamma(x, shape = sum(Bay16$FLIGHT_MIN),  rate = sum(Bay16$EFFORT
 
 collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), from = 0, to = 0.01)
 
-<<<<<<< HEAD:inst/eagles-fws/global.R
 act <- sum(Bay16$FLIGHT_MIN)/sum(Bay16$EFFORT)
 #gamma_plot <- function(obs){
 #  curve(dgamma(x, shape = mean(Bay16$flight_time),
@@ -64,9 +63,6 @@ parallel_predict <- function(iters, alpha, beta){
   }
 
   }
-=======
-act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
-
 
 #prediction <- function(iters, alpha, beta){
 #out <- data.frame(collision = rep(NA,iters), expose = rep(NA, iters), fatality = rep(NA, iters))
@@ -78,4 +74,4 @@ act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
 #}
 #return(out)
 #}
->>>>>>> origin/master:global.R
+

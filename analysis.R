@@ -59,6 +59,7 @@ uppers <- vapply(1:nrow(df), function(x) {
 #survey and flight observation data
 
 sim2 <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
+sim <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
 
 colnames(sim)[c(4,5,7,8)] <- c("LQ_F", "UQ_F", "LQ", "UQ")
 sim$eagle_rate <- flight
