@@ -46,9 +46,9 @@ df$b <- df$TIME*df$AREA
 df$a <- df$eagle_rate*df$b
 
 uppers <- vapply(1:nrow(df), function(x) {
-  a <- df$a[x]
-  b <- df$b[x]
-  out <- prediction(10000, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+  a <- df$a
+  b <- df$b
+  out <- prediction(10000, a+sum(Bay16$FLIGHT_MIN), b+sum(Bay16$EFFORT))
   q80 <- quantile(out$fatality, 0.8)
   out2 <- prediction(10000, a, b)
   q82 <- quantile(out2$fatality, 0.8)
@@ -58,11 +58,11 @@ uppers <- vapply(1:nrow(df), function(x) {
 #create dataset of estimated fatality distributions based on simulated
 #survey and flight observation data
 
-sim2 <- plyr::mdply(df[, c(3,4)], estimates, niters = 10000)
+sim2 <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
 sim <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
 
-colnames(sim)[c(4,5,7,8)] <- c("LQ_F", "UQ_F", "LQ", "UQ")
-sim$eagle_rate <- flight
+colnames(sim2)[c(4,5,7,8)] <- c("LQ_F", "UQ_F", "LQ", "UQ")
+sim2$eagle_rate <- df$eagle_rate
 
   plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(UQ_F-LQ_F),
@@ -124,7 +124,7 @@ plot_ly(Bay16)%>%
 plot_ly(Bay16)%>%
   add_trace(x = ~EFFORT, y = ~ (UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers")
 
-plot_ly(sim)%>%
+plot_ly(sim2)%>%
   add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~b,
             marker = list(line = list(color = "black"),
                           sizemode = "diameter",

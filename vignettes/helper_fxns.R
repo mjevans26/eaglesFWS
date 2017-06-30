@@ -4,7 +4,7 @@ prediction <- function(iters, alpha, beta){
                    fatality = rep(NA, iters)
                    )
  for(n in 1:iters){
-   c <- rbeta(1, shape1 = 9.38, shape2 = 3224.51)
+   c <- rbeta(1, shape1 = 9.28, shape2 = 3224.51)
    e <- rgamma(1, shape = alpha, rate = beta)
    f <- c*e
    out[n,] <- c(c,e,f)
@@ -19,7 +19,7 @@ vir_col <- function(n){
 #function to return mean and 80% CI estimates from a predicted fatality distribution
 #hardwired to use Bay16 data as exposure priors
 estimates <- function(niters, a, b){
-  out <- prediction(niters, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+  out <- prediction(niters, a+sum(Bay16$FLIGHT_MIN), b+sum(Bay16$EFFORT))
   fatality <- mean(out$fatality)
   q80 <- quantile(out$fatality, c(0.1, 0.9))
   out2 <- prediction(10000, a, b)

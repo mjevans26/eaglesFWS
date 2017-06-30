@@ -22,8 +22,8 @@ library(shinydashboard)
 library(stringr)
 library(tidyr)
 library(viridis)
-
-load("data/data.RData")
+source("helper_fxns.R")
+load("data/newdata.RData")
 
 tab <- select(Bay16,SITE, TURBINES, EFFORT, FLIGHT_MIN)
 
@@ -166,10 +166,10 @@ Eagle flight time and survey effort are used to estimate eagle exposure at a giv
 ```{r p4, echo=FALSE, warning=FALSE, error=FALSE}
 
 plotList <- function(x){
-  a <- mean(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
-  b <- mean(Bay16$EFFORT) + Bay16$EFFORT[x]
+  a <- sum(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
+  b <- sum(Bay16$EFFORT) + Bay16$EFFORT[x]
   act <- Bay16$FLIGHT_MIN[x]/Bay16$EFFORT[x]
-  obs <- density(rgamma(10000, shape = a, rate = b))
+  obs <- curve(dgamma(x, shape = a, rate = b), 0, 2)
   site <- Bay16$SITE[x]
 
   plot_ly()%>%
@@ -237,8 +237,8 @@ fluidPage(
   fluidRow(
     column(12,
            plot_ly(Bay16)%>%
-             add_trace(y = ~U_F*SCALE, x = ~U*SCALE, type = "scatter", mode = "markers", 
-                       size = ~((UQ_F*SCALE)-(LQ_F*SCALE)),
+             add_trace(y = ~UQ_F, x = ~UQ, type = "scatter", mode = "markers", 
+                       size = ~((UQ_F)-(LQ_F)),
                        marker = list(line = list(color = "black"),
                             sizemode = "diameter",
                             colorbar = list(y = 0.75, x = 0.85,
@@ -247,10 +247,10 @@ fluidPage(
               sizes = c(10,25), color = ~ EFFORT, name = "Estimated Eagle Fatalities",
               text = ~paste("Site =", SITE, "<br>Effort =", round(EFFORT,2),
                             "hr*km<sup>3</sup>", "<br>Prediction w/Priors =", 
-                            round(U_F*SCALE, 2),
-                            "<br>Prediction w/o Priors =", round(U*SCALE, 2)),
+                            round(UQ_F, 2),
+                            "<br>Prediction w/o Priors =", round(UQ, 2)),
               hoverinfo = "text")%>%
-             add_trace(x = ~c(0, max(U_F*SCALE)), y = ~c(0, max(U_F*SCALE)), type = "scatter",
+             add_trace(x = ~c(0, max(UQ_F)), y = ~c(0, max(UQ_F)), type = "scatter",
                        mode = "lines", name = "1:1 Line")%>%
              layout(hovermode = "closest", font = list(color = "black"),
                     yaxis = list(title = "Estimates using Priors"),
@@ -283,19 +283,19 @@ fluidPage(
   fluidRow(
     column(12,
 
-plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
-  add_trace(x = ~U*mean(Bay16$SCALE), y = ~U_F*mean(Bay16$SCALE), type = "scatter", 
+plot_ly(sim2[!(sim2$a %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
+  add_trace(x = ~UQ*mean(Bay16$SCALE), y = ~UQ_F*mean(Bay16$SCALE), type = "scatter", 
             mode = "markers", size = ~b,
             marker = list(line = list(color = "black"),
                           sizemode = "diameter",
-                          colorbar = list(y = 1, x = 0.1,
+                          colorbar = list(y = 0.6, x = 0.4,
                                           title = "Eagle Exposure<br>Rate")
             ),
-            sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
+            sizes = c(5,15), color = ~ a, name = "Estimated Eagle Fatalities",
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>",
-                          "<br>Exposure =", eagle_rate, "min"),
+                          "<br>Exposure =", a, "min"),
             hoverinfo = "text")%>%
-  add_trace(x = ~c(0, max(U_F*mean(Bay16$SCALE))), y = ~c(0, max(U_F*mean(Bay16$SCALE))),
+  add_trace(x = ~c(0, max(UQ_F*mean(Bay16$SCALE))), y = ~c(0, max(UQ_F*mean(Bay16$SCALE))),
             type = "scatter", mode = "lines", name = "1:1 Line")%>%
 #  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004),
 #            type = "scatter", mode = "lines", name = "Mean")%>%
@@ -321,15 +321,15 @@ The prior distribution of exposure probabilities has a greater effect on estimat
 ```{r echo = FALSE, warning = FALSE, error = FALSE}
 fluidPage(
   fluidRow(
-plot_ly(sim)%>%
+plot_ly(sim2)%>%
   add_trace(x = ~(eagle_rate - 1.099637)/0.1094509, 
-            y = ~(U_F-U)*mean(Bay16$SCALE), type = "scatter", mode = "markers",
+            y = ~(UQ_F-UQ)*mean(Bay16$SCALE), type = "scatter", mode = "markers",
             color = ~ b,
             marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
             ),
             text = ~paste("Effort =", round(b, 3), "<br>Z =",
                           round((eagle_rate - 1.099637)/0.1094509, 2),
-                          "<br>Discrepancy =", round((U_F-U)*mean(Bay16$SCALE), 2)),
+                          "<br>Discrepancy =", round((UQ_F-UQ)*mean(Bay16$SCALE), 2)),
             hoverinfo = 'text')%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
@@ -353,19 +353,19 @@ Increased survey effort reduced the influence of prior distributions of exposure
 
 ```{r p3, echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
 #sim$b2 <- sim$b^2
-dev <- glm(data = sim, (MN_F - MN) ~ b*eagle_rate, family = gaussian(link = "inverse"))
-dev_max <- glm(data = sim, (MN_F - MN)~ b, subset = eagle_rate == max(eagle_rate), 
+dev <- glm(data = sim2, (MN_F - MN) ~ b*eagle_rate, family = gaussian(link = "inverse"))
+dev_max <- glm(data = sim2, (MN_F - MN)~ b, subset = eagle_rate == max(eagle_rate), 
                family = gaussian(link = "inverse"))
-dev_min <- glm(data = sim, (MN_F - MN)~ b, subset = eagle_rate == min(eagle_rate), 
+dev_min <- glm(data = sim2, (MN_F - MN)~ b, subset = eagle_rate == min(eagle_rate), 
                family = gaussian(link = "inverse"))
-int <- glm(data = sim, (UQ_F-LQ_F)~ b * eagle_rate)
+int <- glm(data = sim2, (UQ_F-LQ_F)~ b * eagle_rate)
 
 
 fluidPage(
   fluidRow(
     column(6,
-  plot_ly(sim)%>%
-  add_trace(x = ~ b, y = ~(U_F*mean(Bay16$SCALE) - U*mean(Bay16$SCALE)), 
+  plot_ly(sim2)%>%
+  add_trace(x = ~ b, y = ~(UQ_F*mean(Bay16$SCALE) - UQ*mean(Bay16$SCALE)), 
             type = "scatter", mode = "markers",
             color = ~ eagle_rate, marker = list(
               colorbar = list(title = "Eagle<br>Exposure (min)", y = 0.5, x = 0.8)),
@@ -374,19 +374,19 @@ fluidPage(
             hoverinfo = 'text',
             showlegend = FALSE)%>%
     add_trace(x = ~c(10, 10), 
-              y = ~c(min(U_F - U)*mean(Bay16$SCALE), max(U_F - U)*mean(Bay16$SCALE)), 
+              y = ~c(min(UQ_F - UQ)*mean(Bay16$SCALE), max(UQ_F - UQ)*mean(Bay16$SCALE)), 
               type = "scatter", mode = "lines", name = "FWS Minimum")%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
          ),
          yaxis = list(title = "fatality Estimate Discrepancy"),
-         legend = list(x = 0.6, y = 0.9)
+         legend = list(x = 0.7, y = 1)
   )
     ),
   column(6,
 
-plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
+plot_ly(sim2[!(sim2$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),])%>%
   add_trace(x = ~b, y = ~(UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers",
             color = ~ eagle_rate,
             marker = list(colorbar = list(colorbar = list(showscale = FALSE))
@@ -425,9 +425,9 @@ plot_ly(sim[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),]
 
 ### Primary Takeaways
 
-The use of prior distributions of exposure probability can strongly affect the predicted eagle take at wind energy facilities.  Among 26 wind farms, the average difference between 80^th^ percentiles of Bayesian versus site-specific estimates of eagle fatalities was `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 2)` eagles per year (max = `r round(max((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`, s.d. = `r round(sd((Bay16$U_F - Bay16$U)*Bay16$SCALE), 2)`).
+The use of prior distributions of exposure probability can strongly affect the predicted eagle take at wind energy facilities.  Among 26 wind farms, the average difference between 80^th^ percentiles of Bayesian versus site-specific estimates of eagle fatalities was `r round(mean(abs((Bay16$UQ_F - Bay16$UQ)*Bay16$SCALE)), 2)` eagles per year (max = `r round(max((Bay16$UQ_F - Bay16$UQ)*Bay16$SCALE), 2)`, s.d. = `r round(sd((Bay16$UQ_F - Bay16$UQ)*Bay16$SCALE), 2)`).
 
-Survey effort, and the number of eagles observed at a site change the magnitude of this effect.  At the minimum survey effort required by FWS, the difference in estimates ranged from `r round(min((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` to `r round(max((sim$U_F - sim$U)*mean(Bay16$SCALE)), 2)` fatalities per year. For a site with minimum eagle exposure rates (0.01 min/hr*km^3^), adding an additional survey hour per month, or survey plot, to the FWS minimum can decrease discrepancy by 0.2 annual fatalities. 
+Survey effort, and the number of eagles observed at a site change the magnitude of this effect.  At the minimum survey effort required by FWS, the difference in estimates ranged from `r round(min((sim$UQ_F - sim$UQ)*mean(Bay16$SCALE)), 2)` to `r round(max((sim$UQ_F - sim$UQ)*mean(Bay16$SCALE)), 2)` fatalities per year. For a site with minimum eagle exposure rates (0.01 min/hr*km^3^), adding an additional survey hour per month, or survey plot, to the FWS minimum can decrease discrepancy by 0.2 annual fatalities. 
 
 The more observed eagle activity at a site differs from the mean of the prior distribution, the greater the discrepancy between site-specific and Bayesian estimates of predicted fatality.  For every s.d. that an observed exposure rate is greater than the mean of the prior, discrepancy increases by 0.1 eagles.
 
@@ -442,7 +442,7 @@ The addition of covariates to the prior distribution of exposure probabilities m
 
 An advantage of Bayesian modeling is to moderate the effect of random outlier observations.  However, this also means that where surveys accurately detect extreme observed eagle activity, this site-specific information can be effectively washed out.  Thus, an important question is when do extreme eagle activity levels observed during surveys accurately reflect site-specific eagle exposure, rather than representing random anomallies.  At two of four sites where Bayesian estimates were lower than site-specific estimates, the observed fataility estimate fell outside of the bayesian 80th percentile using priors, but was covered by the 80th percentile of the site-specific estimate.  These sites reported 2 of the top 3 eagle exposure rates, and illustrate instances where site-specific information should carry more weight.  In both cases, survey effort was in the lower 25% of all sites. 
 
-Permits are re-evaluated every 5 years.  Thus, the mean observed discrepancy of `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE)), 0)` fatalities per year could equate to the unexpected take of an additional `r round(mean(abs((Bay16$U_F - Bay16$U)*Bay16$SCALE))*5, 0)` eagles before models are updated.  FWS advises that if permitted eagle take exceeds 1% of the estimated population size of either species within the LAP area, additional take is a concern.  If take exceeds 5% of the estimated population size within the LAP area, additional take is considered inadvisable.  Cummulative authorized take must not exceed 5% of local populations.  Underestimating eagle take by a few individuals per year over a 5 year permit, could approach these thresholds.  The inverse is not ideal from the perspective of regulated entities, as wind developers could pay mitigation costs for an unwarranted 5 additional incidental takes. 
+Permits are re-evaluated every 5 years.  Thus, the mean observed discrepancy of `r round(mean(abs((Bay16$UQ_F - Bay16$UQ)*Bay16$SCALE)), 0)` fatalities per year could equate to the unexpected take of an additional `r round(mean(abs((Bay16$UQ_F - Bay16$UQ)*Bay16$SCALE))*5, 0)` eagles before models are updated.  FWS advises that if permitted eagle take exceeds 1% of the estimated population size of either species within the LAP area, additional take is a concern.  If take exceeds 5% of the estimated population size within the LAP area, additional take is considered inadvisable.  Cummulative authorized take must not exceed 5% of local populations.  Underestimating eagle take by a few individuals per year over a 5 year permit, could approach these thresholds.  The inverse is not ideal from the perspective of regulated entities, as wind developers could pay mitigation costs for an unwarranted 5 additional incidental takes. 
 
 Survey effort is used to adjust the rate parameter of the gamma distribution used to define the eagle exposure prior.  Thus, increased survey effort leads to a narrower posterior distribution, and smaller 80% CI.  In practice, this makes sense, as we have greater confidence that the results of more intensive surveys are reflective of consistent patterns, rather than conditions during a limited number of instances.
 
@@ -459,6 +459,7 @@ glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + RISK_
 ```
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
+Bay16$RISK_HA2 <- Bay16$RISK_HA^2
 scale <- glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + RISK_HA2)
 fluidPage(
   fluidRow(
@@ -519,7 +520,7 @@ We generated predictions at each survey site using only data from that site, in 
 
 ```{r eval = FALSE}
 #Predictions integrating Exposure prior and survey data
-prediction(100000, a+mean(Bay16$FLIGHT_MIN), b+mean(Bay16$EFFORT))
+prediction(100000, a+sum(Bay16$FLIGHT_MIN), b+summarize_each_(Bay16$EFFORT))
 
 #Predictions from survey data
 prediction(100000, a, b)
