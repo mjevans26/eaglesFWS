@@ -12,6 +12,7 @@ output:
     toc: true
     toc_depth: 3
     toc_float: true
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -433,7 +434,7 @@ The use of prior distributions of exposure probability can strongly affect the p
 
 The discrepancy between site-specific and Bayesian estimates of predicted fatality increases as the eagle activity observed at a site is more extreme.  Controlling for the effect of survey effort, the discrepancy between estimates increases by `r round(src_discrep$SRC[2,1]*sd(rgamma(5000, mean(Bay16$FLIGHT_MIN), mean(Bay16$EFFORT)))/sd(sim$eagle_rate)*sd(sim$U_F - sim$U)*mean(Bay16$SCALE)*-1, 2)` eagles for every standard deviation an observed level of eagle activity falls from the prior mean.
 
-Survey effort can also change the magnitude of this effect.  At the minimum survey effort required by FWS, the difference between site-specific and Bayesian fatality estimates ranged from `r round(min((sim$U_F - sim$U)*mean(Bay_16$SCALE)), 2)` to `r round(max((sim$U_F - sim$U)*mean(Bay_16$SCALE)), 2)` eagles per year. For a site with minimum eagle exposure rates (0.01 min/hr*km^3^), adding an additional survey hour per month, or survey plot, to the FWS minimum will decrease discrepancy by `r round(((sim$U_F[1] - sim$U[1])-(sim$U_F[2] - sim$U[2])) * mean(Bay16$SCALE), 2)` predicted annual fatalities, on average. 
+Survey effort can also change the magnitude of this effect.  At the minimum survey effort required by FWS, the difference between site-specific and Bayesian fatality estimates ranged from `r round(min((sim$U_F - sim$U)*mean(Bay_16$SCALE)), 2)` to `r round(max((sim$U_F - sim$U)*mean(Bay_16$SCALE)), 2)` eagles per year. For a site with minimum eagle exposure rates (0.01 min/hrxkm^3^), adding an additional survey hour per month, or survey plot, to the FWS minimum will decrease discrepancy by `r round(((sim$U_F[1] - sim$U[1])-(sim$U_F[2] - sim$U[2])) * mean(Bay16$SCALE), 2)` predicted annual fatalities, on average. 
 
 ### Recommendations
 The relationship between deviation of observed exposure rates from the mean of the prior and estimate discrepancy suggest thresholds for trigger points at which FWS may want to consider a different approach to permitting and mitigation, or require additional survey effort.  These thresholds should be based on the standardized distance initially observed eagle activity rates at a site are from the mean of the prior distribution.
@@ -463,7 +464,7 @@ glm(data = Bay_16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + RISK
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
 Bay_16$RISK_HA2 <- Bay_16$RISK_HA^2
-scale <- glm(data = Bay_16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + RISK_HA2)
+scale <- glm(data = Bay_16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + I(RISK_HA^2))
 fluidPage(
   fluidRow(
  plot_ly(Bay_16)%>%
@@ -479,7 +480,7 @@ fluidPage(
 )
 ```
 
-The coefficients from this model were then used as the expansion factor for each site.  Thus we calculate the as `r round(scale$coefficients[1], 2)` + `r round(scale$coefficients[2], 2)` * Risk Area + `r round(scale$coefficients[3], 2)` * (Risk Area) ^2^.
+The coefficients from this model were then used as the expansion factor for each site.  Thus we calculate the flight risk area as `r round(scale$coefficients[1], 2)` + `r round(scale$coefficients[2], 2)` * Risk Area + `r round(scale$coefficients[3], 2)` * (Risk Area) ^2^.
 
 ### Simulation Data
 We generated hypothetical values for survey effort based on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  

@@ -46,24 +46,57 @@ scale <- glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_H
 
 Inputs {.sidebar}
 -----------------------------------------------------------------------
-The [U.S. Fish and Wildlife Service](https://www.fws.gov/)
-uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
-This approach combines prior information about eagle collision and activity rates across existing wind farms, with surveys of eagle activity at proposed sites to estimate the likely number of fatalities.
-
-This dashboard allows you to explore how priors interact with survey data to produce predicted eagle fatalities at a set of wind energy sites.
+Enter the size of the proposed project, in hectares:
 
 ```{r selector, echo = FALSE}
-selectInput("sites", 
-            "Choose a Site", 
-            choices = c("", levels(Bay16$SITE)), 
-            selected = "Combine Hills, Oregon")
 
-cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
+numericInput('size',
+            "Project Area (ha)",
+            value = round(mean(Bay16$RISK_HA), 0),
+            min = 0,
+            max = 500,
+            step = 1
+            )
+```
 
-cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
+Select the area surveyed. FWS requres at least one cylindrical plot of 800m radius (201 ha) by 200m height.
 
-cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
+```{r echo = FALSE}
+sliderInput("area",
+            "Survey Area (ha)",
+            min = 0,
+            max = 2010,
+            value = 201,
+            step = 201)
+```
 
+Select the time spent surveying for eagles.  FWS requires at least 12 hrs per year, for two years.
+
+```{r echo = FALSE}
+sliderInput("hrs",
+            "Survey Hours",
+            min = 0,
+            max = 240,
+            value = 24,
+            step = 12)
+```
+
+Enter the amount of time eagles were observed flying within survey cylinders.
+
+```{r echo = FALSE}
+numericInput("min",
+            "Flight Time (min)",
+            value = 7,
+            min = 0)
+
+
+
+#cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
+cur_min <- reactive({input$min})
+#cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
+cur_effort <- reactive({input$hrs * input$area * 0.01 * 0.2})
+#cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
+cur_scale <- reactive({-362.57580 + (input$size*33.38994) + ((input$size^2)*-0.03774)})
 a <- reactive({mean(Bay16$FLIGHT_MIN) + cur_min()})
 b <- reactive({mean(Bay16$EFFORT) + cur_effort()})
 ```
@@ -92,6 +125,22 @@ Column {data-width = 500}
 ### Prior Probabilities of Eagle Collision Rates
 
 ```{r collisions, echo = FALSE}
+
+modalDialog(
+  title = h2("Bayesian Eagle Mortality Prediction"),
+  p("The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
+This approach combines surveys of eagle activity at proposed sites with prior information about eagle collision and activity rates across existing wind farms to estimate the likely number of fatalities."),
+br(),
+p("This dashboard allows you to explore how priors interact with survey data to produce predicted eagle fatalities at a set of wind energy sites. Eagle fatalities are predicted using four pieces of information obtained prior to construction:"),
+tags$ol(
+  tags$li("Project Area: the size of the proposed project."),
+  tags$li("Survey Area: the size of the area surveyed for eagles."),
+  tags$li("Survey Hours: time spent conducting eagle surveys."),
+  tags$li("Flight Time: the total time eagles were observed flying within survey areas")
+),
+  easyClose = TRUE
+  )
+
 renderPlotly({
   plot_ly()%>%
   add_trace(x = ~collision$x, y = ~collision$y, type = "scatter", mode = "lines",
@@ -167,15 +216,15 @@ plotlyOutput("exposure")
 
 ```{r fatalities, echo = FALSE}
 observeEvent(input$calculate,{
-  if(input$sites != ""){
+  #if(input$sites != ""){
     out <- isolate({prediction(10000, a(), b())})
     fatality <- isolate({density(out$fatality*cur_scale())})
-    q80 <- isolate({quantile(out$fatality, c(0.1, 0.9))})
+    q80 <- isolate({quantile(out$fatality*cur_scale(), 0.8)})
 
     out2 <- isolate({prediction(10000, a()-mean(Bay16$FLIGHT_MIN),
                                 b()-mean(Bay16$EFFORT))})
     fatality2 <- isolate({density(out2$fatality*cur_scale())})
-    q82 <- isolate({quantile(out2$fatality, c(0.1, 0.9))})
+    q82 <- isolate({quantile(out2$fatality*cur_scale(), c(0.8))})
     
 output$fatality <- renderPlotly({
         plot_ly()%>%
@@ -196,13 +245,17 @@ output$fatality <- renderPlotly({
                                   sep = ""),
                     hoverinfo = "text")%>%
           layout(##title = "Predicted Annual Eagle Fatalities",
-                 xaxis = list(title = "Fatalities per Year",
-                              range = c(0,20)),
+                 xaxis = list(title = "Fatalities per Year"
+                              ,range = c(0,20)
+                              ),
                  yaxis = list(title = "Probability Density"),
                  legend = list(x = 0.7,
                                y = 1))
     })
-  }
+output$text <-renderText({
+    paste("For a proposed ", input$size, "(ha) project observing ", input$min, "minutes of eagle flight time during ", input$hrs, " survey hours covering ", input$area, "(ha), the predicted take requiring mitigation is ", round(q80, 1), " eagles.")
+    })
+  #}
 })
 plotlyOutput('fatality')
 ```
@@ -210,7 +263,7 @@ plotlyOutput('fatality')
 Column {data-width=500}
 -------------------------------------------------------------------------
 
-### Survey Data
+### FWS Survey Data {data-height=800}
 
 ```{r datatable, echo = FALSE}
 tab <- select(Bay16, 
@@ -231,6 +284,12 @@ dt <- DT::datatable(tab,
                 )%>%
   formatRound("EFFORT", 2)
 })
+```
+
+### Results {data-height=200}
+
+```{r output, echo = FALSE}
+span(textOutput('text'), style='color:blue; font-size:18px')
 ```
 
 > Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).
