@@ -30,14 +30,14 @@ source("helper_fxns.R")
 #source("exposure.R")
 #source("fatality.R")
 
-prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  
-                      rate = mean(Bay16$EFFORT)),
+prior <- curve(dgamma(x, shape = 11.81641,  
+                      rate = 9.765625),
                from = 0.5,
-               to = 2)
+               to = 3)
 
-collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), 
+collision <- curve(dbeta(x, shape1 = 1.638029, shape2 = 290.0193), 
                    from = 0, 
-                   to = 0.01)
+                   to = 0.04)
 
 act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
 
@@ -97,8 +97,8 @@ cur_min <- reactive({input$min})
 cur_effort <- reactive({input$hrs * input$area * 0.01 * 0.2})
 #cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
 cur_scale <- reactive({-362.57580 + (input$size*33.38994) + ((input$size^2)*-0.03774)})
-a <- reactive({mean(Bay16$FLIGHT_MIN) + cur_min()})
-b <- reactive({mean(Bay16$EFFORT) + cur_effort()})
+a <- reactive({11.81641 + cur_min()})
+b <- reactive({9.7656250 + cur_effort()})
 ```
 
 
@@ -201,7 +201,7 @@ output$exposure <- renderPlotly({
                 hoverinfo = "text")%>%
       layout(#title = "Eagle Exposure",
              xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)",
-                          range = c(0,3)),
+                          range = c(0,5)),
              yaxis = list(title = "Probability Density"))
    })
 
@@ -217,12 +217,15 @@ plotlyOutput("exposure")
 ```{r fatalities, echo = FALSE}
 observeEvent(input$calculate,{
   #if(input$sites != ""){
-    out <- isolate({prediction(10000, a(), b())})
+    out <- isolate({simFatal(iters = 10000, BMin = cur_min(), SmpHrKm = cur_effort(),
+                             aPriExp=11.81641, bPriExp=9.7656250,
+                             aPriCPr=1.638029, bPriCPr=290.0193)})
     fatality <- isolate({density(out$fatality*cur_scale())})
     q80 <- isolate({quantile(out$fatality*cur_scale(), 0.8)})
 
-    out2 <- isolate({prediction(10000, a()-mean(Bay16$FLIGHT_MIN),
-                                b()-mean(Bay16$EFFORT))})
+    out2 <- isolate({simFatal(iters = 10000, BMin = cur_min(), SmpHrKm = cur_effort(),
+                             aPriExp = 0, bPriExp = 0,
+                             aPriCPr = 1.638029, bPriCPr = 290.0193)})
     fatality2 <- isolate({density(out2$fatality*cur_scale())})
     q82 <- isolate({quantile(out2$fatality*cur_scale(), c(0.8))})
     
@@ -235,6 +238,10 @@ output$fatality <- renderPlotly({
                                   round(fatality$x, 2),
                                   sep = ""),
                     hoverinfo = "text")%>%
+          add_trace(x = ~c(q80, q80), y = ~ c(0, max(fatality$y)),
+                    mode = 'lines', type = 'scatter',
+                    line = list(color = vir_col(3)[3]),
+                    name = "80th Percentile")%>%
           add_trace(x = ~fatality2$x, y = ~fatality2$y, type = "scatter", 
                     mode = "lines",
                     fill = "tozeroy",
@@ -244,10 +251,12 @@ output$fatality <- renderPlotly({
                                   round(fatality2$x, 2),
                                   sep = ""),
                     hoverinfo = "text")%>%
+          add_trace(x = ~c(q82, q82), y = ~ c(0, max(fatality2$y)),
+                    mode = 'lines', type = 'scatter',
+                    line = list(color = vir_col(3)[2]),
+                    name = "80th Percentile")%>%
           layout(##title = "Predicted Annual Eagle Fatalities",
-                 xaxis = list(title = "Fatalities per Year"
-                              ,range = c(0,20)
-                              ),
+                 xaxis = list(title = "Fatalities per Year"),
                  yaxis = list(title = "Probability Density"),
                  legend = list(x = 0.7,
                                y = 1))

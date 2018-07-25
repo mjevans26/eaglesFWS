@@ -30,14 +30,14 @@ source("helper_fxns.R")
 #source("exposure.R")
 #source("fatality.R")
 
-prior <- curve(dgamma(x, shape = mean(Bay16$FLIGHT_MIN),  
-                      rate = mean(Bay16$EFFORT)),
+prior <- curve(dgamma(x, shape = 11.81641,  
+                      rate = 9.765625),
                from = 0.5,
-               to = 2)
+               to = 3)
 
-collision <- curve(dbeta(x, shape1 = 9.38, shape2 = 3224.51), 
+collision <- curve(dbeta(x, shape1 = 1.638029, shape2 = 290.0193), 
                    from = 0, 
-                   to = 0.01)
+                   to = 0.04)
 
 act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
 
@@ -64,8 +64,8 @@ cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
 
 cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
 
-a <- reactive({mean(Bay16$FLIGHT_MIN) + cur_min()})
-b <- reactive({mean(Bay16$EFFORT) + cur_effort()})
+a <- reactive({11.81641 + cur_min()})
+b <- reactive({9.765625 + cur_effort()})
 ```
 
 
