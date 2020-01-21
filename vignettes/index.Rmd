@@ -12,6 +12,7 @@ output:
     toc: true
     toc_depth: 3
     toc_float: true
+#  runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -23,7 +24,7 @@ library(shinydashboard)
 library(stringr)
 library(tidyr)
 library(viridis)
-source("helper_fxns.R")
+source("R/helper_fxns.R")
 load("data/newdata.RData")
 
 tab <- select(Bay16,SITE, TURBINES, EFFORT, FLIGHT_MIN)
@@ -252,9 +253,7 @@ fluidPage(
              add_trace(y = ~UQ_F, x = ~UQ, type = "scatter", mode = "markers", 
                        size = ~((UQ_F)-(MN_F)),
                        marker = list(line = list(color = "black"),
-                            sizemode = "diameter",
-                            colorbar = list(y = 0.5, x = 0.85,
-                                            title = "Survey Effort<br>hr*km<sup>3</sup>")
+                            sizemode = "diameter"
                             ),
               sizes = c(10,25), color = ~ EFFORT, name = "Estimated Eagle Fatalities",
               text = ~paste("Site =", SITE, "<br>Effort =", round(EFFORT,2),
@@ -264,6 +263,8 @@ fluidPage(
               hoverinfo = "text")%>%
              add_trace(x = ~c(0, max(UQ_F)), y = ~c(0, max(UQ_F)), type = "scatter",
                        mode = "lines", name = "1:1 Line")%>%
+             colorbar (y = 0.7, x = 0.80,
+                             title = "Survey Effort<br>hr*km<sup>3</sup>")%>%
              layout(hovermode = "closest", font = list(color = "black"),
                     yaxis = list(title = "Estimates using Priors"),
                     xaxis = list(title = "Estimates without Priors"),
@@ -299,9 +300,7 @@ plot_ly(sim3[!(sim3$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09))
   add_trace(x = ~UQ, y = ~UQ_F, type = "scatter", 
             mode = "markers", size = ~b,
             marker = list(line = list(color = "black"),
-                          sizemode = "diameter",
-                          colorbar = list(y = 1, x = 0.1,
-                                          title = "Eagle Exposure<br>Rate")
+                          sizemode = "diameter"
             ),
             sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>",
@@ -311,6 +310,8 @@ plot_ly(sim3[!(sim3$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09))
             type = "scatter", mode = "lines", name = "1:1 Line")%>%
 #  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004),
 #            type = "scatter", mode = "lines", name = "Mean")%>%
+  colorbar(y = 1, x = 0.1,
+           title = "Eagle Exposure<br>Rate (min/hr)")%>%
   layout(hovermode = "closest", font = list(color = "black"),
          xaxis = list(title = "Estimates without Priors"),
          yaxis = list(title = "Estimates using Priors"),
@@ -337,12 +338,12 @@ plot_ly(sim3[!(sim3$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09))
   add_trace(x = ~(eagle_rate - 1.1)/0.107, 
             y = ~(UQ_F-UQ), type = "scatter", mode = "markers",
             color = ~ b,
-            marker = list(colorbar = list(title = "Survey Effort<br>(hr*km<sup>3</sup>)")
-            ),
             text = ~paste("Effort =", round(b, 3), "<br>Z =",
                           round((eagle_rate - 1.1)/0.107, 2),
                           "<br>Discrepancy =", round((UQ_F-UQ), 2)),
             hoverinfo = 'text')%>%
+  colorbar(x = 0.9, y = 1, title = "Survey Effort<br>(hr*km<sup>3</sup>",
+           lenmode = 'fraction', len = 0.4)%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = " Difference between Observed Exposure and Prior Mean (standard deviations)"
@@ -380,14 +381,15 @@ fluidPage(
   plot_ly(sim3)%>%
   add_trace(x = ~ b, y = ~(UQ_F - UQ), 
             type = "scatter", mode = "markers",
-            color = ~ eagle_rate, marker = list(
-              colorbar = list(title = "Eagle<br>Exposure<br>Rate")),
-            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Exposure =", eagle_rate, "min"),
+            color = ~ eagle_rate,
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>2</sup>", "<br>Exposure =", eagle_rate, "min"),
             hoverinfo = 'text',
             showlegend = FALSE)%>%
-    add_trace(x = ~c(10, 10),
-              y = ~c(min(UQ_F - UQ), max(UQ_F - UQ)), 
-              type = "scatter", mode = "lines", name = "FWS Minimum<br>Survey Effort")%>%
+    #add_trace(x = ~c(10, 10),
+    #          y = ~c(min(UQ_F - UQ), max(UQ_F - UQ)), 
+    #          type = "scatter", mode = "lines", name = "FWS Minimum<br>Survey Effort")%>%
+    colorbar(title = "Eagle Exposure<br>Rate (min/hr)", x = 0.8, y = 0.8,
+             lenmode = 'fraction', len = 0.35)%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
@@ -433,6 +435,37 @@ plot_ly(sim3[!(sim$eagle_rate %in% c(0.02, 0.03, 0.04, 0.06, 0.07, 0.08, 0.09)),
 
 ```
 
+### Harder to Prove Big Projects Take No Eagles
+
+A bayesian approach to estimating fatalities guards against situations where surveys fail to detect eagles that are in fact present around the site.  However, this means that sites where there are truly no birds will have some predicted take.  In situations where no eagles are observed during pre-construciton surveys, greater survey effort moves predicted take closer to zero (Fig. 7).  This response is highly dependent on the size of the wind farm.  For the smallest sites, 48 hr.km^2^ of survey effort reduced fatality predictions < 1.  Large sites with no eagle observations require more survey effort to reduce predicted take to zero (~300 hr.km^2^), however the rate of reduction is greater at large sites than at smaller sites.
+
+```{r zerosim, echo=FALSE, warning=FALSE, error=FALSE, message = FALSE}
+#PLOT FOR ZERO OBSERVED EAGLES
+fluidPage(
+  fluidRow(
+    plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
+        color = ~Hectares, type = 'scatter', mode = 'markers',
+        marker = list(colorbar = list(x = 0.7, y = 1, title = "Project<br>Size (ha)")),
+        hoverinfo = 'text',
+        text = ~paste("Effort:", Effort, "hr*km<sup>3</sup>",
+                      "<br>Project Size:", Hectares, "ha",
+                      "<br>Fatalities:", round(UQ_F, 1), "eagles"))%>%
+      colorbar(x = 0.8, y = 1, title = 'Project Size<br>(# Turbines)')%>%
+      layout(legend = list(x = 0.7, y = 1),
+             xaxis = list(title = "Effort (hr*km2)"),
+             yaxis = list(title = "Predicted Annual Eagle Fatalities")
+             )
+    ),
+  fluidRow(
+    column(12,
+           p(class = 'caption',
+             tags$b("Figure 7. Project size affects predicted take at sites where no eagles are observed."), " Changes in predicted fatalities, given no observed eagles, as a function of survey effort for different sized wind farms.")
+           )
+  )
+)
+
+```
+
 # Methods
 
 We generated posterior distributions for predicted eagle fatalities from empirical and simulation data using the FWS Bayesian model. The prior distribution on eagle exposure used by FWS is a gamma distribution *Exposure ~ Gamma (11.82, 9.76)*, with shape and rate parameters represented by eagle flight time in minutes, and survey effort in (hr km^3^). The prior distribution on collisions used by FWS is a beta distribution *Collision ~ Beta (1.64, 290.02)* with parameters representative of number of collisions and minutes of exposure. 
@@ -468,7 +501,7 @@ fluidPage(
 The coefficients from this model were then used as the expansion factor for each site.  Thus we calculate the flight risk area as `r round(scale$coefficients[1], 0)` + `r round(scale$coefficients[2], 0)` * Risk Area + `r round(scale$coefficients[3], 2)` * (Risk Area) ^2^.
 
 ### Simulation Data
-We generated hypothetical values for survey effort based on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius > 800m and height > 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  
+We generated hypothetical values for survey effort based on the minimum requirements provided by U.S. FWS for pre-construction monitoring.  FWS requires at least one cylindrical survey plot with radius >= 800m and height >= 200m, and that plots be surveyed for at least 12 hours per year, for two years.  Thus, the minimum values for survey area and time were `r min(area)` km<sup>3</sup>, and `r min(time)` hrs, respectively.  We simulated up to five plots (area = `r max(area)`) in increments of one, and up to  `r max(time)` hrs in increments of 12, and calculated survey effort for all combinations.  
 
 Observed eagle flight time (min) provided in Bay et al. (2016) is a function of survey effort and eagle activity at a site.  Therefore, to generate a range of potential exposure values (min/hr*km^3^), we divided flight time by effort at each survey site to obtain an effort invariant measure of eagle exposure rate, and took a random sample of 20 values.  The final simulation data included all combinations of survey effort and eagle exposure rate, which we multiplied to obtain flight minutes, producing 1000 values.   
 

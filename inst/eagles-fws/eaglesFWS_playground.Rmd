@@ -20,6 +20,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
 library(DT)
 library(flexdashboard)
+library(googlesheets)
 library(ggplot2)
 library(plotly)
 library(shiny)
@@ -35,31 +36,80 @@ prior <- curve(dgamma(x, shape = 11.81641,
                from = 0.5,
                to = 3)
 
+priorb <- curve(dgamma(x, shape = 1.52522,
+                       rate = 0.4781255),
+                from = 0,
+                to = 10)
+
 collision <- curve(dbeta(x, shape1 = 1.638029, shape2 = 290.0193), 
                    from = 0, 
                    to = 0.04)
 
+collisionb <- curve(dbeta(x, shape1 = 2.573610, shape2 = 366.3502),
+                    from = 0,
+                    to = 0.04)
+
 act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
 
 scale <- glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + I(RISK_HA^2))
+
+tab <- select(Bay16, 
+                    SITE, TURBINES, 
+                    EFFORT, FLIGHT_MIN)
+
+dt <- DT::datatable(tab,
+                    fillContainer = TRUE,
+                    selection = list(mode = 'single', 
+                                     target = 'row'),
+                    colnames = c("Site", "Turbines", "Survey Effort (hr*km3)",
+                                 "Eagle Obs (min)"),
+                  options = list(rownames = FALSE,
+                                 pageLength = nrow(tab),
+                                 dom = 'tip'
+                                 )
+                )%>%
+  formatRound("EFFORT", 2)
 ```
 
 Inputs {.sidebar}
------------------------------------------------------------------------
-Enter the size of the proposed project, in hectares:
+====================
+Enter the proposed project specs:
 
 ```{r selector, echo = FALSE}
-
-numericInput('size',
-            "Project Area (ha)",
-            value = round(mean(Bay16$RISK_HA), 0),
-            min = 0,
-            max = 500,
-            step = 1
-            )
+column(6,
+       numericInput('n', 'Number of Turbines',
+            value = 100,
+            min = 0, 
+            max = 1000,
+            width = '100%'),
+       numericInput('t', 'Hours of Operation',
+             value = 10,
+             min = 8, 
+             max = 14,
+             width = '100%')
+)
+column(6,
+       numericInput('h', 'Turbine Height (m)',
+             value = 200,
+             min = 100,
+             max = 300,
+             width = '100%'),
+       numericInput('r', 'Rotor Radius (m)',
+             value = 30,
+             min = 20,
+             max = 100,
+             width = '100%')
+)
+#numericInput('size',
+#            "Project Area (ha)",
+#            value = round(mean(Bay16$RISK_HA), 0),
+#            min = 0,
+#            max = 500,
+#            step = 1
+#            )
 ```
 
-Select the area surveyed. FWS requres at least one cylindrical plot of 800m radius (201 ha) by 200m height.
+Area surveyed for eagles. FWS requres at least one cylindrical plot of 800m radius (201 ha) by 200m height.
 
 ```{r echo = FALSE}
 sliderInput("area",
@@ -70,7 +120,7 @@ sliderInput("area",
             step = 201)
 ```
 
-Select the time spent surveying for eagles.  FWS requires at least 12 hrs per year, for two years.
+Time spent surveying.  FWS requires at least 12 hrs per year, for two years.
 
 ```{r echo = FALSE}
 sliderInput("hrs",
@@ -94,11 +144,14 @@ numericInput("min",
 #cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
 cur_min <- reactive({input$min})
 #cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
-cur_effort <- reactive({input$hrs * input$area * 0.01 * 0.2})
+cur_effort <- reactive({input$hrs * (input$area * 0.01) * 0.2})
 #cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
-cur_scale <- reactive({-362.57580 + (input$size*33.38994) + ((input$size^2)*-0.03774)})
+cur_scale <- reactive({(input$t*365) * input$n * input$h/1000 * ((input$r/1000)^2) * pi})
+#cur_scale <- reactive({-362.57580 + (input$size*33.38994) + ((input$size^2)*-0.03774)})
 a <- reactive({11.81641 + cur_min()})
 b <- reactive({9.7656250 + cur_effort()})
+ab <- reactive({1.52522 + cur_min()})
+bb <- reactive({0.4781255 + cur_min()})
 ```
 
 
@@ -119,6 +172,8 @@ actionButton("calculate", "Calculate Fatalities")
 helpText("Note: Calcuating predicted fatality distributions takes time.  Please allow several seconds for the graph to load.")
 ```
 
+#Golden Eagles
+
 Column {data-width = 500}
 --------------------------------------------------------------------------
 
@@ -128,16 +183,17 @@ Column {data-width = 500}
 
 modalDialog(
   title = h2("Bayesian Eagle Mortality Prediction"),
-  p("The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model to estimate the number of eagles likely to be killed by proposed wind projects.
+  p("The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model to estimate the number of bald and golden eagles likely to be killed by proposed wind projects.
 This approach combines surveys of eagle activity at proposed sites with prior information about eagle collision and activity rates across existing wind farms to estimate the likely number of fatalities."),
 br(),
 p("This dashboard allows you to explore how priors interact with survey data to produce predicted eagle fatalities at a set of wind energy sites. Eagle fatalities are predicted using four pieces of information obtained prior to construction:"),
 tags$ol(
-  tags$li("Project Area: the size of the proposed project."),
+  tags$li("Project Specs: the number and size of turbines."),
   tags$li("Survey Area: the size of the area surveyed for eagles."),
   tags$li("Survey Hours: time spent conducting eagle surveys."),
   tags$li("Flight Time: the total time eagles were observed flying within survey areas")
 ),
+p("The tabs at the top of the page allow you to switch between golden and bald eagle estimates."),
   easyClose = TRUE
   )
 
@@ -201,8 +257,10 @@ output$exposure <- renderPlotly({
                 hoverinfo = "text")%>%
       layout(#title = "Eagle Exposure",
              xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)",
-                          range = c(0,5)),
-             yaxis = list(title = "Probability Density"))
+                          range = c(0,10)),
+             yaxis = list(title = "Probability Density"),
+             legend = list(x = 0.7,
+                           y = 1))
    })
 
 })
@@ -262,7 +320,7 @@ output$fatality <- renderPlotly({
                                y = 1))
     })
 output$text <-renderText({
-    paste("For a proposed ", input$size, "(ha) project observing ", input$min, "minutes of eagle flight time during ", input$hrs, " survey hours covering ", input$area, "(ha), the predicted take requiring mitigation is ", round(q80, 1), " eagles.")
+    paste("For the proposed project observing ", input$min, "minutes of eagle flight time during ", input$hrs, " survey hours covering ", input$area, "(ha), the predicted take requiring mitigation is ", round(q80, 1), " golden eagles using the update priors.")
     })
   #}
 })
@@ -272,33 +330,172 @@ plotlyOutput('fatality')
 Column {data-width=500}
 -------------------------------------------------------------------------
 
-### FWS Survey Data {data-height=800}
+### FWS Survey Data {data-height=700}
 
 ```{r datatable, echo = FALSE}
-tab <- select(Bay16, 
-                    SITE, TURBINES, 
-                    EFFORT, FLIGHT_MIN)
-DT::renderDataTable({
-dt <- DT::datatable(tab,
-                    fillContainer = TRUE,
-                    selection = list(mode = 'single', 
-                                     selected = which(Bay16$SITE == input$sites), 
-                                     target = 'row'),
-                    colnames = c("Site", "Turbines", "Survey Effort (hr*km3)",
-                                 "Eagle Obs (min)"),
-                  options = list(rownames = FALSE,
-                                 pageLength = nrow(tab),
-                                 dom = 'tip'
-                                 )
-                )%>%
-  formatRound("EFFORT", 2)
-})
+DT::renderDataTable({dt})
 ```
 
-### Results {data-height=200}
+### Results {data-height=300}
 
 ```{r output, echo = FALSE}
 span(textOutput('text'), style='color:blue; font-size:18px')
+```
+
+> Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).
+
+# Bald Eagles
+
+Column {data-width = 500}
+--------------------------------------------------------------------------
+
+### Prior Probabilities of Eagle Collision Rates
+
+```{r collisionsb, echo = FALSE}
+
+renderPlotly({
+  plot_ly()%>%
+  add_trace(x = ~collisionb$x, y = ~collisionb$y, type = "scatter", mode = "lines",
+            fill = "tozeroy", name = "Prior", line = list(color = "grey"),
+            text = ~paste("Prior probability of Collision Rate = ",
+                          round(collisionb$x, 3),
+                          "<br> is ",
+                          round(collisionb$y, 3),
+                          sep = ""),
+            hoverinfo = "text")%>%
+      layout(#title = "Prior Collision Rates",
+             xaxis = list(title = "Collision Rate (per Exposure)",
+                          range = 0, 0.01),
+             yaxis = list(title = "Probability Density"))
+})
+
+#ggplot(Bay16, aes(x = EFFORT, y = OBS_MIN))+
+#  geom_point()
+#renderPlotly({
+#ggplotly()
+#})
+```
+
+### Eagle Activity (_Click 'Update Distributions'_)
+
+```{r exposuresb, echo = FALSE}
+observeEvent(input$update, {
+  act <- isolate({cur_min()/cur_effort()})
+  obs <- isolate({density(rgamma(10000, 
+                                 shape = ab(), 
+                                 rate = bb()
+                                 )
+                          )
+    })
+  
+output$exposureb <- renderPlotly({ 
+    plot_ly()%>%
+      add_trace(x = ~c(act, act), y = ~c(0,max(c(priorb$y,obs$y))),
+                type = "scatter", mode = "lines",
+                name = "Observed", line = list(color = vir_col(3)[2]),
+                text = ~paste("Observed Activity<br>at site = ",
+                              round(act,2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = priorb$x, y = priorb$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Prior", line = list(color = vir_col(3)[1]),
+                text = ~paste("Prior Activity<br>estimate = ",
+                              round(priorb$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      add_trace(x = ~obs$x, y = ~obs$y,
+                type = "scatter", mode = "lines", fill = "tozeroy",
+                name = "Combined", line = list(color = vir_col(3)[3]),
+                text = ~paste("Combined Activity<br>estimate = ",
+                              round(obs$x, 2),
+                              sep = ""),
+                hoverinfo = "text")%>%
+      layout(#title = "Eagle Exposure",
+             xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)",
+                          range = c(0,10)),
+             yaxis = list(title = "Probability Density"),
+             legend = list(x = 0.7,
+                           y = 1))
+   })
+
+})
+
+plotlyOutput("exposureb")
+```
+
+> Activity is the number of minutes eagles are observed flying within survey areas, per hour.
+
+### Predicted Fatalities (_Click 'Predict Fatalities'_)
+
+```{r fatalitiesb, echo = FALSE}
+observeEvent(input$calculate,{
+  #if(input$sites != ""){
+    outb <- isolate({simFatal(iters = 10000, BMin = cur_min(), SmpHrKm = cur_effort(),
+                             aPriExp=1.52522, bPriExp=0.4781255,
+                             aPriCPr=2.573610, bPriCPr=366.3502)})
+    fatalityb <- isolate({density(outb$fatality*cur_scale())})
+    q80b <- isolate({quantile(outb$fatality*cur_scale(), 0.8)})
+
+    out2b <- isolate({simFatal(iters = 10000, BMin = cur_min(), SmpHrKm = cur_effort(),
+                             aPriExp = 0, bPriExp = 0,
+                             aPriCPr = 2.573610, bPriCPr = 366.3502)})
+    fatality2b <- isolate({density(out2b$fatality*cur_scale())})
+    q82b <- isolate({quantile(out2b$fatality*cur_scale(), c(0.8))})
+    
+output$fatalityb <- renderPlotly({
+        plot_ly()%>%
+          add_trace(x = ~fatalityb$x, y = ~fatalityb$y, type = "scatter", mode = "lines",
+                    fill = "tozeroy",
+                    name = "Incl. Prior Exposure", line = list(color = vir_col(3)[3]),
+                    text = ~paste("Predicted fatalities<br>incorporating prior = ",
+                                  round(fatalityb$x, 2),
+                                  sep = ""),
+                    hoverinfo = "text")%>%
+          add_trace(x = ~c(q80b, q80b), y = ~ c(0, max(fatalityb$y)),
+                    mode = 'lines', type = 'scatter',
+                    line = list(color = vir_col(3)[3]),
+                    name = "80th Percentile")%>%
+          add_trace(x = ~fatality2b$x, y = ~fatality2b$y, type = "scatter", 
+                    mode = "lines",
+                    fill = "tozeroy",
+                    line = list(color = vir_col(3)[2]), 
+                    name = "Using Site Survey Only",
+                    text = ~paste("Predicted fatalities<br>from site survey = ",
+                                  round(fatality2b$x, 2),
+                                  sep = ""),
+                    hoverinfo = "text")%>%
+          add_trace(x = ~c(q82b, q82b), y = ~ c(0, max(fatality2b$y)),
+                    mode = 'lines', type = 'scatter',
+                    line = list(color = vir_col(3)[2]),
+                    name = "80th Percentile")%>%
+          layout(##title = "Predicted Annual Eagle Fatalities",
+                 xaxis = list(title = "Fatalities per Year"),
+                 yaxis = list(title = "Probability Density"),
+                 legend = list(x = 0.7,
+                               y = 1))
+    })
+output$textb <-renderText({
+    paste("For the proposed project observing ", input$min, "minutes of bald eagle flight time during ", input$hrs, " survey hours covering ", input$area, "(ha), the predicted take requiring mitigation is ", round(q80b, 1), " bald eagles using the update priors.")
+    })
+  #}
+})
+plotlyOutput('fatalityb')
+```
+
+Column {data-width=500}
+-------------------------------------------------------------------------
+
+### FWS Survey Data {data-height=700}
+
+```{r datatableb, echo = FALSE}
+DT::renderDataTable({dt})
+```
+
+### Results {data-height=300}
+
+```{r outputb, echo = FALSE}
+span(textOutput('textb'), style='color:blue; font-size:18px')
 ```
 
 > Data taken from Appendix S1 in  [Bay et al. (2016). The Journal of Wildlife Management 80(6): 1000-1010](http://onlinelibrary.wiley.com/doi/10.1002/jwmg.21086/full).

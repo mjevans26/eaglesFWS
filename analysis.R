@@ -1,6 +1,13 @@
+library(Deriv)
+library(plyr)
 library(dplyr)
 library(plotly)
+library(reshape2)
 library(stringr)
+library(tidyr)
+library(rv)
+library(viridis)
+
 source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
 site_preds18 <- vapply(1:nrow(Bay16), function(x) {
  #a <- sum(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
@@ -75,10 +82,14 @@ estimates <- function(iters, a, b){
 #survey plot of 0.8km radius * 0.2km height
 
 flight <- c(0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.15,0.20,0.25,0.50,0.75,1.00,1.50,2.00,2.50,3)
+#Survey time in hours
 time <- seq(1, 10, 1)*12*2
+#Survey area in km3
 area <- seq(0.402, 2.01, 0.402)
 df <- expand.grid(TIME = time, AREA = area, eagle_rate = flight)
+#Effort is time(hrs)*area(km3)
 df$b <- df$TIME*df$AREA
+#Eagle activity is min/hr*km3
 df$a <- df$eagle_rate*df$b
 
 uppers <- vapply(1:nrow(df), function(x) {
@@ -121,7 +132,7 @@ zeroest <- function(iters, Effort, ExpFac){
 zerodf <- expand.grid(Time = time, Area = area, Hectares = seq(50, 400, 50))%>%
   mutate(Effort = Time * Area, ExpFac = 0.005648*(-22558 + 2306*Hectares - 2.61*I(Hectares^2)))
 zerosim <- plyr::mdply(zerodf[, 4:5], zeroest, iters = 10000)
-
+zerosim$Hectares <- zerodf$Hectares
   plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(((UQ_F-MN_F)/(MN_F))/1000),
               marker = list(line = list(color = "black"),
@@ -273,7 +284,209 @@ glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 
 #PLOT FOR ZERO OBSERVED EAGLES
 plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
-        color = ~as.factor(ExpFac), type = 'scatter', mode = 'marker', colors = 'Set2')%>%
+        color = ~Hectares, type = 'scatter', mode = 'marker',
+        marker = list(colorbar = list(x = 0.7, y = 1, title = "Project<br>Size (ha)")),
+        hoverinfo = 'text',
+        text = ~paste("Effort:", Effort, "hr*km<sup>3</sup>", "<br>Project Size:", Hectares, "ha", "<br>Fatalities:", round(UQ_F, 1), "eagles"))%>%
   layout(legend = list(x = 0.7, y = 1),
          xaxis = list(title = "Effort (hr*km2)"),
          yaxis = list(title = "Predicted Annual Eagle Fatalities"))
+
+#COST BENEFIT ANALYSIS
+#Data from West
+monitor_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
+              'annual_low_pMW' = 300, 'annual_high_pMW' = 600)
+
+#From
+retro_costs <- list('low' = 1040, 'high' = 2590)
+electro_rates <- list('low' = 0.0036, 'median' = 0.0051, 'high' = 0.0066)
+
+function(cost, duration, age){
+  age <- ifelse(age == 'adult', 10, 2)
+  future_yrs <- 30 - age
+  n_poles <- eagle_years/0.0051*duration
+  total <- n_poles*cost
+}
+
+#low cost estimate, 20yr duration, adult golden eagle (0.0051)
+15200
+38000
+
+#Can't just plug in an observed eagle activity and find the root across efforts - they are dependent.  Need to use
+#Underlying eagle 'rate'
+cost_fxn <- function(effort, data){
+  with(data, {
+    activity <- a*effort
+    #activity <- 1
+    #size <- 10
+    aExp <- 11.81641
+    bExp <- 9.765626
+    aCPr <- 1.638
+    bCPr <- 290.0193
+    #Read in effort values (hrs*km3)
+    EXP <- rvgamma(1, aExp + activity, bExp + effort)
+    COL <- rvbeta(1, aCPr, bCPr)
+    Fatal <- EXP * COL * size
+    M <- rvquantile(Fatal, 0.8) * 38000
+    S <- effort * 167
+    total_cost <- M+S
+    return(total_cost)
+  })
+}
+
+cost <- function(effort, a, size, return = 'Total'){
+    activity <- a*effort
+    #activity <- 1
+    #size <- 10
+    aExp <- 11.81641
+    bExp <- 9.765626
+    aCPr <- 1.638
+    bCPr <- 290.0193
+    #Read in effort values (hrs*km3)
+    EXP <- rvgamma(1, aExp + activity, bExp + effort)
+    COL <- rvbeta(1, aCPr, bCPr)
+    Fatal <- EXP * COL * size
+    M <- rvquantile(Fatal, 0.8) * 38000
+    S <- effort * 167
+    total_cost <- M+S
+    if (return == 'Total'){
+      return(total_cost[1,])
+    }else if (return == "M"){
+      return(M[1,])
+    }else if (return == "S"){
+      return(S)
+    }
+}
+
+optim(par = 18.4, cost_fxn, method = "L-BFGS-B", lower = 0, upper = 10)
+uniroot(cost_fxn, interval = c(0, 500), data = data.frame(activity = 1, size = 10))
+optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = median(df$a), size = median(Bay16$SCALE)))
+
+
+optim_fxn <- function(erate, size){
+  opt <-optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = erate, size = size), tol = 0.00000001)
+  return(c(opt$minimum, opt$objective))
+}
+
+#For testing purposes, assume all turbines are 200m tall w/80m blades
+test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*3650*(0.2)*(0.08^2)*pi)
+test_cost_surface <- plyr::mdply(test_values, optim_fxn)
+
+#Alternatively we use 'curve' and 'cost' to generate points, fit a line,
+# then find minimum
+crv_fxn <- function(erate, size){
+  crv <- curve(cost(x, erate, size),
+               from = 0, to = 500)
+
+  lo <- loess(crv$y[1,] ~ crv$x, span = 0.2)
+  smoothed <- predict(lo, x = crv$x)
+
+  min_effort <- crv$x[smoothed == min(smoothed)]
+
+  return(c(min(smoothed), min_effort))
+}
+
+test_cost_surface <- plyr::mdply(test_values, crv_fxn)
+colnames(test_cost_surface) <- c("erate", 'size', 'effort', 'cost')
+
+plot_ly(type = 'contour', z = acast(test_cost_surface, erate~size, value.var = "effort"),
+        y = seq(0,3,0.01), x = seq(20,500,20),
+        colorbar = list(title = 'Survey<br>Effort<br>(hr*km3)'),
+        autocontour = FALSE,
+        contours = list(
+          start = 201,
+          end = 201,
+          size = 1,
+          coloring = 'heatmap'),
+        line = list(smoothing = 5)
+        )%>%
+  layout(
+    yaxis = list(title = 'Eagle Activity Rate (min/hr*km3)'),
+    xaxis = list(title = 'Project Size (# Turbines)')
+  )
+
+
+plot_ly(type = 'heatmap', z = acast(low_cost_surface, erate~size, value.var = "effort"),
+        y = seq(0,3,0.05), x = seq(20,500,20),
+        colorbar = list(title = 'Survey<br>Effort<br>(hr*km<sup>3</sup>)'))%>%
+  layout(
+    yaxis = list(title = 'Eagle Activity Rate (min/hr*km<sup>3</sup>)',
+                 titlefont = list(color = 'black', size = 14),
+                 tickfont = list(color = 'black', size = 12)),
+    xaxis = list(title = 'Project Size (# Turbines)',
+                 titlefont = list(color = 'black', size = 14),
+                 tickfont = list(color = 'black', size = 12))
+  )
+
+#For a given project size, how does the min effort change with eagle rate
+plot_ly(type = 'scatter', mode = 'lines')%>%
+  add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[1]),
+        x = ~erate, y = ~effort)%>%
+  add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[5]),
+        x = ~erate, y = ~effort)%>%
+  add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[10]),
+            x = ~erate, y = ~effort)%>%
+  add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[15]),
+            x = ~erate, y = ~effort)%>%
+  add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[20]),
+            x = ~erate, y = ~effort)%>%
+  add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[25]),
+            x = ~erate, y = ~effort)
+
+#Example curves showing effort/cost tradeoff
+multiplot <- function(i){
+  cst <- curve(cost(x, sub_test$erate[i], sub_test$size[i], 'Total'),
+               from = 0, to = 500)
+  mon <- curve(cost(x, sub_test$erate[i], sub_test$size[i], 'M'),
+               from = 0, to = 500)
+  surv <- curve(cost(x, sub_test$erate[i], sub_test$size[i], 'S'),
+                from = 0, to = 500)
+  cols <- viridis(5)
+  plot_ly(type = 'scatter', mode = 'lines')%>%
+    add_trace(
+      x = ~cst$x, y = ~cst$y,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1)),
+      line = list(color = 'orange'),
+      showlegend = FALSE,
+      name = 'Total'
+      )%>%
+    add_trace(
+      x = ~mon$x, y = ~mon$y,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1), dash = 'dash'),
+      line = list(color = 'grey', dash = 'dash'),
+      showlegend = FALSE,
+      name = "Mitigation"
+    )%>%
+    add_trace(
+      x = ~surv$x, y = ~surv$y,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1), dash = 'dot'),
+      line = list(color = 'blue', dash = 'dot'),
+      showlegend = FALSE,
+      name = 'Survey'
+    )%>%
+    add_trace(
+      x = c(10, 10), y = c(0, max(cst$y)),
+      line = list(color = 'black', width = 1),
+      showlegend = FALSE
+    )
+}
+
+sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                   round(size, 4) %in% c(293.5504, 1761.3025, 3816.1554, 5871.0084, 7338.7604))
+
+s1 <- subplot(lapply(1:nrow(sub_test), multiplot),
+              nrows = 5, shareY = TRUE,
+              titleY = TRUE, shareX =TRUE,titleX= TRUE)%>%
+  layout(yaxis = list(title = ''),
+         yaxis2 = list(title = ''),
+         yaxis3 = list(title = 'Cost ($)'),
+         yaxis4 = list(title = ''),
+         yaxis5 = list(title = ''),
+         xaxis = list(title = ''),
+         xaxis2 = list(title = ''),
+         xaxis3 = list(title = 'Effort (hr*km<sup>3</sup>)'),
+         xaxis4 = list(title = ''),
+         xaxis5 = list(title = ''),
+         xaxis6 = list(title = ''))
+
+
