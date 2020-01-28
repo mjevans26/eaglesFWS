@@ -1,0 +1,92 @@
+
+Listening on http://127.0.0.1:42551
+
+
+
+processing file: index.Rmd
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:plyr':
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Loading required package: ggplot2
+
+Attaching package: 'plotly'
+
+The following object is masked from 'package:ggplot2':
+
+    last_plot
+
+The following objects are masked from 'package:plyr':
+
+    arrange, mutate, rename, summarise
+
+The following object is masked from 'package:stats':
+
+    filter
+
+The following object is masked from 'package:graphics':
+
+    layout
+
+Quitting from lines 20-182 (index.Rmd) 
+Warning: Error in library: there is no package called 'rv'
+  139: stop
+  138: library
+  137: eval
+  136: eval
+  131: evaluate_call
+  130: evaluate::evaluate
+  129: evaluate
+  127: block_exec
+  126: call_block
+  125: process_group.block
+  122: process_file
+  121: knitr::knit
+  120: <Anonymous>
+  115: <reactive>
+   99: doc
+   98: shiny::renderUI
+   97: func
+   84: origRenderFunc
+   83: output$__reactivedoc__
+    3: <Anonymous>
+    1: rmarkdown::run
+
+
+
+processing file: index.Rmd
+Quitting from lines 20-182 (index.Rmd) 
+Warning: Error in library: there is no package called 'rv'
+  139: stop
+  138: library
+  137: eval
+  136: eval
+  131: evaluate_call
+  130: evaluate::evaluate
+  129: evaluate
+  127: block_exec
+  126: call_block
+  125: process_group.block
+  122: process_file
+  121: knitr::knit
+  120: <Anonymous>
+  115: <reactive>
+   99: doc
+   98: shiny::renderUI
+   97: func
+   84: origRenderFunc
+   83: output$__reactivedoc__
+    3: <Anonymous>
+    1: rmarkdown::run

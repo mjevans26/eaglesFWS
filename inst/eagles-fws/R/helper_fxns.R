@@ -123,7 +123,6 @@ cost_fxn <- function(effort, data){
     aCPr <- 1.638
     bCPr <- 290.0193
     #Read in effort values (hrs*km3)
-    #Do we need to use rv here?
     EXP <- rvgamma(1, aExp + activity, bExp + effort)
     COL <- rvbeta(1, aCPr, bCPr)
     Fatal <- EXP * COL * size

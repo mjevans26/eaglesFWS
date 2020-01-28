@@ -1,0 +1,240 @@
+---
+title: "Eagle Permitting Costs"
+author: "Michael Evans"
+date: "January 23, 2020"
+output: 
+  flexdashboard::flex_dashboard:
+    #vertical_layout: scroll
+    orientation: rows
+    css: custom.css
+    social: menu
+    df_print: paged
+    navbar:
+    - {title: "", icon: "fa-question-circle fa-lg", align: right, href: "mailto:esa@defenders.org?subject=Bayesian eagles"}
+    - {title: "", icon: "fa-github fa-lg", align: right, href: "https://github.com/mjevans26/eaglesFWS"}
+    - {title: "CCI", align: right, href: "https://cci-dev.org"}
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(base64enc)
+library(plyr)
+library(dplyr)
+library(plotly)
+library(reshape2)
+library(rv)
+library(stringr)
+library(shiny)
+library(shinydashboard)
+library(tidyr)
+library(viridis)
+
+source("R/helper_fxns.R")
+load("data/surfaces.rdata")
+#Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
+cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
+
+# Turbine to size conversion factor
+# 365 days * 10hrs per day
+# 200m tall turbine
+# 80m blade radius
+cf <- 3650*(0.2)*(0.08^2)*pi
+
+# Create different combinations of eagle rates and project sizes. 
+# For testing purposes, assume all turbines are 200m tall w/80m blades
+test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*cf)
+#test-values <- mutate(test_values, mrate = 15200, srate = 167)
+effort_df <- data.frame(effort = seq(0, 500, 1))
+
+plot_curves <- function(erate, nturb, mcost, scost){
+  size <- nturb*cf
+  output <- plyr::mdply(effort_df, cost_curve, erate, size, mcost, scost)
+  min_effort <- output$effort[output$T == min(output$T)]
+  plot_ly(data = output, type = 'scatter', mode = 'lines')%>%
+    add_trace(
+      x = ~effort, y = ~T,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1)),
+      line = list(color = 'orange'),
+      showlegend = TRUE,
+      name = 'Total'
+      )%>%
+    add_trace(
+      x = ~effort, y = ~M,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1), dash = 'dash'),
+      line = list(color = 'grey', dash = 'dash'),
+      showlegend = TRUE,
+      name = "Mitigation"
+    )%>%
+    add_trace(
+      x = ~effort, y = ~S,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1), dash = 'dot'),
+      line = list(color = 'blue', dash = 'dot'),
+      showlegend = TRUE,
+      name = 'Survey'
+    )%>%
+    add_trace(
+      x = c(min_effort, min_effort), y = c(0, max(output$T)),
+      line = list(color = 'black', width = 1),
+      name = paste('Min cost effort (', min_effort, ' hrs)', sep = "")
+    )%>%
+    layout(
+      xaxis = list(title = 'Survey effort (hr*km<sup>3</sup>)'),
+      yaxis = list(title = 'Cost ($)'),
+      legend = list(x = 0.2, y = 1)#,
+      #title = paste('Costs at a site with', round(nturb, 0), 'turbines &', erate, 'eagle min/hr')
+    )
+}
+
+#Estimated survey cost data from West Ecosystems Inc.
+survey_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
+                     "Low" = 2000/12, 'High' = 5000/12,
+              'annual_low_pMW' = 300, 'annual_high_pMW' = 600)
+
+#Estimated powerpole retrofit costs and eagle electrocution rates (eagles/pole*yr) from Adt report
+retro_costs <- list('Low' = 1040, 'High' = 2590)
+electro_rates <- list('Low' = 0.0036, 'Median' = 0.0051, 'High' = 0.0066)
+durations <- c(10, 20, 30, 40, 50)
+
+plot_surface <- function(df){
+  plot_ly(type = 'heatmap', z = acast(df, erate~size, value.var = "effort"),
+        y = seq(0,3,0.05), x = seq(20,500,20),
+        zmin = 0, zmax = 400,
+        colorbar = list(title = 'Survey<br>Effort<br>(hr*km<sup>3</sup>)')
+        )%>%
+  layout(
+    yaxis = list(title = 'Eagle Activity Rate (min/hr*km<sup>3</sup>)',
+                 titlefont = list(color = 'black', size = 14),
+                 tickfont = list(color = 'black', size = 12)),
+    xaxis = list(title = 'Project Size (# Turbines)',
+                 titlefont = list(color = 'black', size = 14),
+                 tickfont = list(color = 'black', size = 12))
+  )
+}
+
+select_scost <- selectInput('scost', 'Survey cost per hour',
+                            list('Low ($167)' = 'Low',
+                                 'High ($417)' = 'High'), selected = 'Low ($167/hr)')
+
+select_mcost <- selectInput('mcost', 'Mitigation cost per eagle',
+                            list('Low ($1,040)' = 'Low',
+                                 'High ($2,590)' = 'High'))
+
+slide_erate <- sliderInput('erate', 'Eagle activity (min/hr)',
+                           min = 0, max = 3, value = 0.1, step = 0.05)
+
+slide_size <- sliderInput('size', 'Number of turbines',
+                          min = 20, max = 500, value = 100, step = 10)
+
+expand <- actionButton("show", "Click for details of the permitting process")
+
+output$surfacePlot <- renderPlotly({
+  selection <- paste(input$mcost, input$scost, sep = "_")
+  df <- switch(selection,
+               Low_Low = low_low,
+               Low_High = low_high,
+               High_Low = high_low,
+               High_High = high_high)
+  plot_surface(df)
+})
+
+output$curvePlot <- renderPlotly({
+  mcost <- filter(cost_table, Cost == input$mcost, Duration == 20, Rate == "Median")%>%
+    select(M)
+  scost <- survey_costs[input$scost][[1]]
+  erate <- input$erate
+  size <- input$size
+  plot_curves(erate, size, mcost, scost)
+})
+
+modal <- modalDialog(
+        title = "Predicting Eagle Mortality",
+        fluidRow(
+        column(6,
+               img(src = dataURI(file = "www/turbines.jpg", mime = "image/jpg"),
+                   alt = "Eagle flying near wind turbines",
+                   height = 400, width = 400)
+        ),
+        column(6,
+                 p("Under the Bald and Golden Eagle Protection Act (BAGEPA), developers of wind energy projects must obtain an incidental take permit for any bald or golden eagles that might be killed as a result of the project's operation. The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model that combines prior information about eagle activity and collision rates at existing wind farms with surveys of eagle activity at the proposed site to predict how many eagles will be killed annually."),
+br(),
+p("Greater survey effort leads to a more accurate estimate of eagle fatalities, which is also affected by the size of the proposed project. Developers must mitigate for this predicted number of eagle fatalities. Most often this involves paying for retrofits of power transmission lines that prevent eagles from being electrocuted, such that an equivalent number of eagle deaths are prevented. Therefore, the total cost of mitigation is related to four factors:"),
+tags$ol(
+  tags$li("^Mitigation cost: cost of powerpole retrofits to offset 1 eagle"),
+  tags$li("Survey cost: costs of eagle surveys"),
+  tags$li("Eagle activity: level of eagle activity at the project site"),
+  tags$li("*Project size: number of turbines to be built.")
+),
+p("This app allows users to explore the relationship between these four factors to estimate costs associated with BAGEPA at a given project."),
+p("^Mitigation costs assume eagles are electrocuted at a rate of 0.0051 birds per pole per year, and that powerpole retrofits last for 20 years."),
+p("*The project size parameter used to estimate eagle mortality is a product of turbine size, operating time, and number of turbines. For simplicity, we assume 200 m tall turbines with 80 m blades operating for 10 hr per day.")
+               )
+        ),
+        easyClose = TRUE,
+        size = 'l',
+        footer = NULL
+      )
+
+observeEvent(input$show,
+             {showModal(modal)})
+
+```
+
+Intro {.sidebar data-width=400}
+---
+
+### Eagles & Wind Energy
+
+```{r intro, echo = FALSE}
+#fluidPage(
+#fluidRow(
+p("The Bald and Golden Eagle Protection Act requires wind energy developers to survey and mitigate for eagles predicted to be killed at a proposed project.")
+br()
+div(expand, style = 'text-align: center;')
+br()
+p("This app lets a user explore how survey and mitigation costs change based on user-defined scenarios.")
+#    )
+#)
+```
+
+### <i class="fa fa-sliders"></i> Parameters 
+
+```{r selectors, echo = FALSE}
+#fluidPage(
+  fluidRow(
+    br(),
+    column(1),
+    column(10,
+           select_mcost,
+           select_scost,
+           slide_erate,
+           slide_size),
+    column(1)
+  )
+#)
+```
+
+Row
+------
+
+### Costs vs. Survey Effort 
+
+```{r curves, echo = FALSE}
+fillCol(flex = c(1, NA),
+        plotlyOutput('curvePlot'),
+        p(em("Costs associated with eagle surveying and mitigation as a function of survey effort. Greater survey effort generates predictions for eagle take that more closely reflect eagle activity at a given site. For sites with < 1.1 eagle min/hr, additional survey effort lowers mitigation costs. These curves are affected by changes in all four input parameters."),
+          style = 'font-size:1em')
+)
+```
+
+### Optimal Survey Effort
+
+```{r surfaces, echo = FALSE}
+fillCol(flex = c(1, NA),
+  plotlyOutput('surfacePlot', height = '100%'),
+         p(em("Survey effort that will lead to minimum costs associated with eagle permitting. These values are shown for a range of possible eagle activity levels and project sizes for a given set of estimated survey and mitigation costs. The figure will change in response to different survey and mitigation cost estimates."),
+           style = 'font-size:1em'
+           )
+)
+```

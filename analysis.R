@@ -9,6 +9,7 @@ library(rv)
 library(viridis)
 
 source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
+
 site_preds18 <- vapply(1:nrow(Bay16), function(x) {
  #a <- sum(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
  #b <- sum(Bay16$EFFORT) + Bay16$EFFORT[x]
@@ -129,11 +130,15 @@ zeroest <- function(iters, Effort, ExpFac){
   q80 <- quantile(out$fatality, c(0.8))
   return (c("MN_F" = fatality, "UQ_F" = q80))
 }
+
 zerodf <- expand.grid(Time = time, Area = area, Hectares = seq(50, 400, 50))%>%
   mutate(Effort = Time * Area, ExpFac = 0.005648*(-22558 + 2306*Hectares - 2.61*I(Hectares^2)))
+
 zerosim <- plyr::mdply(zerodf[, 4:5], zeroest, iters = 10000)
+
 zerosim$Hectares <- zerodf$Hectares
-  plot_ly(Bay16)%>%
+
+plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(((UQ_F-MN_F)/(MN_F))/1000),
               marker = list(line = list(color = "black"),
                             sizemode = "diameter",
@@ -150,7 +155,7 @@ zerosim$Hectares <- zerodf$Hectares
            yaxis = list(title = "Estimates without Priors"),
            legend = list(x = 0.30, y = 0.95, bordercolor = "black", borderwidth = 1))
 
-  plot_ly(Bay16)%>%
+plot_ly(Bay16)%>%
     add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)), type = "scatter", mode = "lines", name = "1:1 Line")%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~OBS_MIN,
               marker = list(line = list(color = "black"),
@@ -193,6 +198,7 @@ plot_ly(Bay16)%>%
 plot_ly(Bay16)%>%
   add_trace(x = ~EFFORT, y = ~ (UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers")
 
+#Scatter plot estimates with priors vs. without priors for simulated data. Color by eagle rate, size by effort. 1:1 Line for comparison
 plot_ly(sim3)%>%
   add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~b,
             marker = list(line = list(color = "black"),
@@ -210,6 +216,7 @@ plot_ly(sim3)%>%
          yaxis = list(title = "Estimates without Priors"),
          legend = list(x = 0.10, y = 0.95, bordercolor = "black", borderwidth = 1))
 
+#Plot deviance between estimates using priors and site-specific estimate as a function of survey effort from simulated data. Color by eagle rate
 plot_ly(sim3)%>%
   add_trace(x = ~b, y = ~(MN_F-MN), type = "scatter", mode = "markers",
             color = ~ eagle_rate,
@@ -224,6 +231,7 @@ plot_ly(sim3)%>%
          yaxis = list(title = "Standardized Deviance")
   )
 
+#Scatter plot size of 80% CI as a function of survey effort for simulated data. Color by eagle rate
 plot_ly(sim)%>%
   add_trace(x = ~b, y = ~UQ_F-MN_F, type = "scatter", mode = "markers",
             color = ~ eagle_rate,
@@ -238,6 +246,7 @@ plot_ly(sim)%>%
          yaxis = list(title = "Size of 80% CI")
   )
 
+#scatter plot |Standard deviance| between priors and site-specific estimates as a function of eagle activity. Color by effort
 plot_ly(sim3)%>%
   add_trace(x = ~eagle_rate, y = ~abs(MN_F-MN)/MN, type = "scatter", mode = "markers",
             color = ~ b,
@@ -251,6 +260,7 @@ plot_ly(sim3)%>%
          ),
          yaxis = list(title = "Standardized Deviance")
   )
+
 
 plot_ly(sim3)%>%
   add_trace(x = ~a, y = ~(UQ_F-MN_F)/MN_F, type = "scatter", mode = "markers",
@@ -266,7 +276,10 @@ plot_ly(sim3)%>%
          yaxis = list(title = "Size of 80% CI")
   )
 
+#
 plot_ly(sim3)%>%
+  #x is z-score standard deviations of eagle activity above/below mean of exposure prior
+  # 1.099637 is mean of exposure prior, 0.1094509 is sd (citation?)
   add_trace(x = ~(eagle_rate - 1.099637)/0.1094509,
             y = ~(MN_F-MN), type = "scatter", mode = "markers",
             color = ~ b,
@@ -297,94 +310,46 @@ plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
 monitor_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
               'annual_low_pMW' = 300, 'annual_high_pMW' = 600)
 
-#From
-retro_costs <- list('low' = 1040, 'high' = 2590)
-electro_rates <- list('low' = 0.0036, 'median' = 0.0051, 'high' = 0.0066)
+#From Adt report
+retro_costs <- list('Low' = 1040, 'High' = 2590)
+electro_rates <- list('Low' = 0.0036, 'Median' = 0.0051, 'High' = 0.0066)
+durations <- c(10, 20, 30, 40, 50)
 
-function(cost, duration, age){
-  age <- ifelse(age == 'adult', 10, 2)
+#Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
+cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
+
+#' Calculate cost for eagle mitigation
+#'
+#' @param cost per pole cost
+#' @param duration retrofit longevity
+#' @param adult boolean indication of adult or juvenille eagle
+#' @param electrocution assumed per/pole electrocution rate
+#' @return estimated cost (numeric)
+retrofit_cost <- function(cost, duration = 20, adult = TRUE, electrocution){
+  age <- ifelse(isTRUE(adult), 10, 2)
   future_yrs <- 30 - age
-  n_poles <- eagle_years/0.0051*duration
+  n_poles <- future_yrs/0.0051*duration
   total <- n_poles*cost
+  return(total)
 }
 
 #low cost estimate, 20yr duration, adult golden eagle (0.0051)
+
 15200
 38000
 
 #Can't just plug in an observed eagle activity and find the root across efforts - they are dependent.  Need to use
 #Underlying eagle 'rate'
-cost_fxn <- function(effort, data){
-  with(data, {
-    activity <- a*effort
-    #activity <- 1
-    #size <- 10
-    aExp <- 11.81641
-    bExp <- 9.765626
-    aCPr <- 1.638
-    bCPr <- 290.0193
-    #Read in effort values (hrs*km3)
-    EXP <- rvgamma(1, aExp + activity, bExp + effort)
-    COL <- rvbeta(1, aCPr, bCPr)
-    Fatal <- EXP * COL * size
-    M <- rvquantile(Fatal, 0.8) * 38000
-    S <- effort * 167
-    total_cost <- M+S
-    return(total_cost)
-  })
-}
 
-cost <- function(effort, a, size, return = 'Total'){
-    activity <- a*effort
-    #activity <- 1
-    #size <- 10
-    aExp <- 11.81641
-    bExp <- 9.765626
-    aCPr <- 1.638
-    bCPr <- 290.0193
-    #Read in effort values (hrs*km3)
-    EXP <- rvgamma(1, aExp + activity, bExp + effort)
-    COL <- rvbeta(1, aCPr, bCPr)
-    Fatal <- EXP * COL * size
-    M <- rvquantile(Fatal, 0.8) * 38000
-    S <- effort * 167
-    total_cost <- M+S
-    if (return == 'Total'){
-      return(total_cost[1,])
-    }else if (return == "M"){
-      return(M[1,])
-    }else if (return == "S"){
-      return(S)
-    }
-}
-
+#experiment with different ways to find the minimum of the cost function
 optim(par = 18.4, cost_fxn, method = "L-BFGS-B", lower = 0, upper = 10)
 uniroot(cost_fxn, interval = c(0, 500), data = data.frame(activity = 1, size = 10))
 optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = median(df$a), size = median(Bay16$SCALE)))
 
-
-optim_fxn <- function(erate, size){
-  opt <-optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = erate, size = size), tol = 0.00000001)
-  return(c(opt$minimum, opt$objective))
-}
-
 #For testing purposes, assume all turbines are 200m tall w/80m blades
 test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*3650*(0.2)*(0.08^2)*pi)
+test_values <- mutate(test_values, mrate = 38000, srate = 167)
 test_cost_surface <- plyr::mdply(test_values, optim_fxn)
-
-#Alternatively we use 'curve' and 'cost' to generate points, fit a line,
-# then find minimum
-crv_fxn <- function(erate, size){
-  crv <- curve(cost(x, erate, size),
-               from = 0, to = 500)
-
-  lo <- loess(crv$y[1,] ~ crv$x, span = 0.2)
-  smoothed <- predict(lo, x = crv$x)
-
-  min_effort <- crv$x[smoothed == min(smoothed)]
-
-  return(c(min(smoothed), min_effort))
-}
 
 test_cost_surface <- plyr::mdply(test_values, crv_fxn)
 colnames(test_cost_surface) <- c("erate", 'size', 'effort', 'cost')
@@ -433,6 +398,11 @@ plot_ly(type = 'scatter', mode = 'lines')%>%
   add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[25]),
             x = ~erate, y = ~effort)
 
+
+sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                   round(size, 4) %in% c(293.5504, 1761.3025, 3816.1554, 5871.0084, 7338.7604))
+
+
 #Example curves showing effort/cost tradeoff
 multiplot <- function(i){
   cst <- curve(cost(x, sub_test$erate[i], sub_test$size[i], 'Total'),
@@ -471,9 +441,6 @@ multiplot <- function(i){
     )
 }
 
-sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
-                   round(size, 4) %in% c(293.5504, 1761.3025, 3816.1554, 5871.0084, 7338.7604))
-
 s1 <- subplot(lapply(1:nrow(sub_test), multiplot),
               nrows = 5, shareY = TRUE,
               titleY = TRUE, shareX =TRUE,titleX= TRUE)%>%
@@ -489,4 +456,15 @@ s1 <- subplot(lapply(1:nrow(sub_test), multiplot),
          xaxis5 = list(title = ''),
          xaxis6 = list(title = ''))
 
-
+# pre calculate matrices representing optimized effort for different combinations of
+# estimated mitigation and survey costs By default, low and high values are defined for
+# median electrocution rate (0.0051 eagles/pole*yr) and 20 year retrofit duration
+# TODO: incorporate different durations?
+low_low <- mutate(test_values, mrate = 15200, srate = 167)%>%
+  plyr::mdply(crv_fxn)
+low_high <- mutate(test_values, mrate = 15200, srate = 417)%>%
+  plyr::mdply(crv_fxn)
+high_low <- mutate(test_values, mrate = 38000, srate = 167)%>%
+  plyr::mdply(crv_fxn)
+high_high <- mutate(test_values, mrate = 38000, srate = 417)%>%
+  plyr::mdply(crv_fxn)
