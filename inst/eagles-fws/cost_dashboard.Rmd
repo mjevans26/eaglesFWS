@@ -6,7 +6,7 @@ output:
   flexdashboard::flex_dashboard:
     #vertical_layout: scroll
     orientation: rows
-    css: custom.css
+    css: www/dashboard.css
     social: menu
     df_print: paged
     navbar:
@@ -149,27 +149,26 @@ output$curvePlot <- renderPlotly({
 })
 
 modal <- modalDialog(
-        title = "Predicting Eagle Mortality",
+        title = "Predicting Eagle Mortality at Wind Energy Sites",
         fluidRow(
-        column(6,
                img(src = dataURI(file = "www/turbines.jpg", mime = "image/jpg"),
                    alt = "Eagle flying near wind turbines",
-                   height = 400, width = 400)
-        ),
-        column(6,
-                 p("Under the Bald and Golden Eagle Protection Act (BAGEPA), developers of wind energy projects must obtain an incidental take permit for any bald or golden eagles that might be killed as a result of the project's operation. The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model that combines prior information about eagle activity and collision rates at existing wind farms with surveys of eagle activity at the proposed site to predict how many eagles will be killed annually."),
+                   height = 300, width = 300, align = 'left',
+                   style = 'margin: 0px 10px 10px 0px;'),
+                 p("The Bald and Golden Eagle Protection Act (BAGEPA) requires wind energy projects to obtain an incidental take permit for any bald or golden eagles that might be killed as a result of the project's operation. The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model to estimate how many eagles will be killed at a proposed project. The model combines eagle activity and collision rate data from existing wind farms with eagle activity data collected during surveys at the proposed site. To receive a permit, developers must mitigate for the incidental take of the predicted number of eagles."),
 br(),
-p("Greater survey effort leads to a more accurate estimate of eagle fatalities, which is also affected by the size of the proposed project. Developers must mitigate for this predicted number of eagle fatalities. Most often this involves paying for retrofits of power transmission lines that prevent eagles from being electrocuted, such that an equivalent number of eagle deaths are prevented. Therefore, the total cost of mitigation is related to four factors:"),
+p("Mitigation often involves buying retrofits for power transmission lines that prevent eagles from being electrocuted, and greater predicted take requires more mitigation. Simultaneously, more survey effort produces eagle fataliy estimates that more closely reflect eagle activity levels at the proposed site (rather than existing sites). Therefore, the total cost of mitigation is related to four factors:"),
 tags$ol(
-  tags$li("^Mitigation cost: cost of powerpole retrofits to offset 1 eagle"),
+  tags$li("Mitigation cost^: cost of powerpole retrofits to offset 1 eagle"),
   tags$li("Survey cost: costs of eagle surveys"),
   tags$li("Eagle activity: level of eagle activity at the project site"),
-  tags$li("*Project size: number of turbines to be built.")
+  tags$li("Project size*: number of turbines to be built.")
 ),
-p("This app allows users to explore the relationship between these four factors to estimate costs associated with BAGEPA at a given project."),
-p("^Mitigation costs assume eagles are electrocuted at a rate of 0.0051 birds per pole per year, and that powerpole retrofits last for 20 years."),
-p("*The project size parameter used to estimate eagle mortality is a product of turbine size, operating time, and number of turbines. For simplicity, we assume 200 m tall turbines with 80 m blades operating for 10 hr per day.")
-               )
+p("This app allows users to explore the relationship between these four factors under different scenarios to estimate costs associated with eagle surveying and mitigation for a given project."),
+p("^Mitigation costs assume eagles are electrocuted at a rate of 0.0051 birds per pole per year, and that powerpole retrofits last for 20 years.",
+  style = 'font-size:10px; font-style:italic;'),
+p("*The project size parameter used to estimate eagle mortality is a product of turbine size, operating time, and number of turbines. For simplicity, we assume 200 m tall turbines with 80 m blades operating for 10 hr per day.",
+  style = 'font-size:10px; font-style:italic;')
         ),
         easyClose = TRUE,
         size = 'l',
@@ -224,7 +223,7 @@ Row
 fillCol(flex = c(1, NA),
         plotlyOutput('curvePlot'),
         p(em("Costs associated with eagle surveying and mitigation as a function of survey effort. Greater survey effort generates predictions for eagle take that more closely reflect eagle activity at a given site. For sites with < 1.1 eagle min/hr, additional survey effort lowers mitigation costs. These curves are affected by changes in all four input parameters."),
-          style = 'font-size:1em')
+          style = 'font-size:14px; margin: 10px 0px 0px 10px;')
 )
 ```
 
@@ -234,7 +233,7 @@ fillCol(flex = c(1, NA),
 fillCol(flex = c(1, NA),
   plotlyOutput('surfacePlot', height = '100%'),
          p(em("Survey effort that will lead to minimum costs associated with eagle permitting. These values are shown for a range of possible eagle activity levels and project sizes for a given set of estimated survey and mitigation costs. The figure will change in response to different survey and mitigation cost estimates."),
-           style = 'font-size:1em'
+           style = 'font-size:14px; margin: 10px 0px 0px 10px;'
            )
 )
 ```
