@@ -48,6 +48,21 @@ test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*cf)
 #test-values <- mutate(test_values, mrate = 15200, srate = 167)
 effort_df <- data.frame(effort = seq(0, 500, 1))
 
+# define annotation for FWS minimum survey effort
+a <- list(
+  x = 10,
+  y = 10,
+  text = 'FWS minimum',
+  font = list(color = 'black', size = 12),
+  xref = "x",
+  yref = "y",
+  xanchor = 'left',
+  showarrow = TRUE,
+  arrowhead = 7,
+  ax = 20,
+  ay = -40
+)
+
 plot_curves <- function(erate, nturb, mcost, scost){
   size <- nturb*cf
   output <- plyr::mdply(effort_df, cost_curve, erate, size, mcost, scost)
@@ -82,6 +97,7 @@ plot_curves <- function(erate, nturb, mcost, scost){
     layout(
       xaxis = list(title = 'Survey effort (hr*km<sup>3</sup>)'),
       yaxis = list(title = 'Cost ($)'),
+      annotations = a,
       legend = list(x = 0.2, y = 1)#,
       #title = paste('Costs at a site with', round(nturb, 0), 'turbines &', erate, 'eagle min/hr')
     )
