@@ -318,21 +318,6 @@ durations <- c(10, 20, 30, 40, 50)
 #Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
 cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
 
-#' Calculate cost for eagle mitigation
-#'
-#' @param cost per pole cost
-#' @param duration retrofit longevity
-#' @param adult boolean indication of adult or juvenille eagle
-#' @param electrocution assumed per/pole electrocution rate
-#' @return estimated cost (numeric)
-retrofit_cost <- function(cost, duration = 20, adult = TRUE, electrocution){
-  age <- ifelse(isTRUE(adult), 10, 2)
-  future_yrs <- 30 - age
-  n_poles <- future_yrs/0.0051*duration
-  total <- n_poles*cost
-  return(total)
-}
-
 #low cost estimate, 20yr duration, adult golden eagle (0.0051)
 
 15200
@@ -349,9 +334,9 @@ optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = median(df$a), siz
 #For testing purposes, assume all turbines are 200m tall w/80m blades
 test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*3650*(0.2)*(0.08^2)*pi)
 test_values <- mutate(test_values, mrate = 38000, srate = 167)
-test_cost_surface <- plyr::mdply(test_values, optim_fxn)
+#test_cost_surface <- plyr::mdply(test_values, optim_fxn)
 
-test_cost_surface <- plyr::mdply(test_values, crv_fxn)
+test_cost_surface <- plyr::mdply(test_values, min_cost)
 colnames(test_cost_surface) <- c("erate", 'size', 'effort', 'cost')
 
 plot_ly(type = 'contour', z = acast(test_cost_surface, erate~size, value.var = "effort"),
@@ -461,10 +446,13 @@ s1 <- subplot(lapply(1:nrow(sub_test), multiplot),
 # median electrocution rate (0.0051 eagles/pole*yr) and 20 year retrofit duration
 # TODO: incorporate different durations?
 low_low <- mutate(test_values, mrate = 15200, srate = 167)%>%
-  plyr::mdply(crv_fxn)
+  plyr::mdply(min_cost)
 low_high <- mutate(test_values, mrate = 15200, srate = 417)%>%
-  plyr::mdply(crv_fxn)
+  plyr::mdply(min_cost)
 high_low <- mutate(test_values, mrate = 38000, srate = 167)%>%
-  plyr::mdply(crv_fxn)
+  plyr::mdply(min_cost)
 high_high <- mutate(test_values, mrate = 38000, srate = 417)%>%
-  plyr::mdply(crv_fxn)
+  plyr::mdply(min_cost)
+
+# optimization to minimize eagle death
+

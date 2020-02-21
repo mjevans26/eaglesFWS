@@ -5,9 +5,28 @@
 
 #' convert number of turbines to project 'size'
 #'
+#' this function assumes 200m tall turbines with 80m rotors
+#'
+#' @param n number of turbines
+#' @return size (km3)
 turbines_to_size <- function(n){
   size = n*3650*(0.2)*(0.08^2)*pi
   return(size)
+}
+
+#' Calculate cost for eagle mitigation
+#'
+#' @param cost per pole cost
+#' @param duration retrofit longevity
+#' @param adult boolean indication of adult or juvenille eagle
+#' @param electrocution assumed per/pole electrocution rate
+#' @return estimated cost (numeric)
+retrofit_cost <- function(cost, duration = 20, adult = TRUE, electrocution){
+  age <- ifelse(isTRUE(adult), 10, 2)
+  future_yrs <- 30 - age
+  n_poles <- future_yrs/0.0051*duration
+  total <- n_poles*cost
+  return(total)
 }
 
 prediction <- function(iters, aExp, bExp, aCPr, bCPr){
@@ -77,8 +96,16 @@ simFatal <- function(BMin=-1, Fatal=-1, SmpHrKm, ExpFac = 1, aPriExp=1,
 }
 
 
-#function to return mean and 80% CI estimates from a predicted fatality distribution
-#hardwired to use updated golden eagle priors
+#' calculate mean and 80% CI estimates from a predicted fatality distribution
+#'
+#' This function is hardwired to use updated golden eagle priors
+#'
+#' @param niters number of iterations
+#' @param a observed eagle minutes
+#' @param b survey effort (hr*km3)
+#' @return named vector with mean and 80th percentile estimates calcualted with
+#' and without eagle exposure priors
+#'
 estimates <- function(niters, a, b){
   out <- simFatal(BMin = a,
                   Fatal = -1,
@@ -142,7 +169,7 @@ cost_fxn <- function(effort, data){
 #' @param mcost cost of mitigation for 1 eagle take
 #' @param scost hourly cost of pre-construction monitoring
 #'
-#' @return data.frame with total ('T'), mitigation ('M'), and survey ('S') costs
+#' @return data.frame with eagles('E'), total ('T'), mitigation ('M'), survey ('S') costs
 cost <- function(effort, a, size, mrate, srate){
   activity <- a*effort
   #activity <- 1
@@ -155,11 +182,12 @@ cost <- function(effort, a, size, mrate, srate){
   EXP <- rvgamma(1, aExp + activity, bExp + effort)
   COL <- rvbeta(1, aCPr, bCPr)
   Fatal <- EXP * COL * size
-  M <- rvquantile(Fatal, 0.8) * mrate#38000
+  E <- rvquantile(Fatal, 0.8)
+  M <- E * mrate#38000
   S <- effort * srate#167
   total_cost <- M+S
 
-  return(list('T' = total_cost[1,], 'M' = M[1,], 'S' = S))
+  return(list('T' = total_cost[1,], 'M' = M[1,], 'S' = S, 'E' = E))
   #if (return == 'T'){
   #  return(total_cost[1,])
   #}else if (return == "M"){
@@ -173,7 +201,18 @@ cost <- function(effort, a, size, mrate, srate){
 #' @return data frame wih columns x, T, M, S
 cost_curve <- function(effort, erate, size, mrate, srate){
   output <- cost(effort, erate, size, mrate, srate)
-  return(data.frame(T = output['T'], M = output['M'], S = output['S']))
+  return(data.frame(T = output['T'], M = output['M'], S = output['S'], E = output['E']))
+}
+
+#' Function to allow max_eagles() to be run over a range of efforts
+#' @param effort
+#' @param erate
+#' @param size
+#' @param mrate
+#' @param srate
+#' @return data frame with columns x,
+eagle_curve <- function(effort, erate, size, mrate, srate){
+  output <-
 }
 
 
@@ -190,7 +229,7 @@ optim_fxn <- function(erate, size, mrate, srate){
 
 #Alternatively we use 'curve' and 'cost' to generate points, fit a line,
 # then find minimum
-crv_fxn <- function(erate, size, mrate, srate){
+min_cost <- function(erate, size, mrate, srate){
   crv <- curve(cost(x, erate, size, mrate, srate)$T,
                from = 0, to = 500)
 
