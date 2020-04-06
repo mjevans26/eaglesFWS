@@ -49,24 +49,28 @@ vir_col <- function(n){
   return (substr(viridis(n),1,7))
 }
 
+#'
+#' @param BMin observed number of bird minutes
+#' @param Fatal annual avian fatalities on an operational wind facility
+#' @param SmpHrKm total time and area surveyed for bird minutes
+#' @param ExpFac expansion factor
+#' @param aPriExp alpha parameter for the prior on lambda
+#' @param bPriExp beta parameter for the prior on lambda
+#' @param aPriCPr alpha parameter for the prior on C
+#' @param bPriCPr beta parameter for the prior on C
+#'
+#' The default of a negative value for BMin or Fatal indicates that no data were collected for those model inputs
+#'
+#' @require rv
+#' @return data frame with random draws for collision rate, exposure and predicted fatalities
+#' for each iteration
 simFatal <- function(BMin=-1, Fatal=-1, SmpHrKm, ExpFac = 1, aPriExp=1,
                      bPriExp=1,aPriCPr=1, bPriCPr=1, iters){
   out <- data.frame(collision = rep(NA,iters),
                     expose = rep(NA, iters),
                     fatality = rep(NA, iters)
   )
-  # BMin:     observed number of bird minutes
-  # Fatal:    annual avian fatalities on an operational wind facility
-  # SmpHrKm:  total time and area surveyed for bird minutes
-  # ExpFac:   expansion factor
-  # aPriExp:  alpha parameter for the prior on lambda
-  # bPriExp:  beta parameter for the prior on lambda
-  # aPriCPr:  alpha parameter for the prior on C
-  # bPriCPr:  beta parameter for the prior on C
 
-  # The default of a negative value for BMin or Fatal indicates that no data were collected for those model inputs
-
-  #require(rv)
 
   # Update the exposure prior
   if(BMin>=0){
@@ -202,17 +206,6 @@ cost <- function(effort, a, size, mrate, srate){
 cost_curve <- function(effort, erate, size, mrate, srate){
   output <- cost(effort, erate, size, mrate, srate)
   return(data.frame(T = output['T'], M = output['M'], S = output['S'], E = output['E']))
-}
-
-#' Function to allow max_eagles() to be run over a range of efforts
-#' @param effort
-#' @param erate
-#' @param size
-#' @param mrate
-#' @param srate
-#' @return data frame with columns x,
-eagle_curve <- function(effort, erate, size, mrate, srate){
-  output <-
 }
 
 

@@ -10,6 +10,24 @@ library(viridis)
 
 source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
 
+# define plot styles
+# axis format
+ax <- list(
+  titlefont = list(family = 'serif', color = 'black', size = 18),
+  tickfont = list(family = 'serif', color = 'black', size = 14),
+  zerolinewidth = 2,
+  zerolinecolor = 'black',
+  showgrid = FALSE
+)
+
+# colorbar format
+leg <- list(
+  font = list(family = 'serif', color = 'black', size = 14)
+)
+
+# add orca command line utility to R environmental path
+Sys.setenv("PATH" = paste(Sys.getenv("PATH"), "C:\\Users\\mevans\\AppData\\Local\\Programs\\orca", sep = .Platform$path.sep))
+
 site_preds18 <- vapply(1:nrow(Bay16), function(x) {
  #a <- sum(Bay16$FLIGHT_MIN) + Bay16$FLIGHT_MIN[x]
  #b <- sum(Bay16$EFFORT) + Bay16$EFFORT[x]
@@ -199,36 +217,41 @@ plot_ly(Bay16)%>%
   add_trace(x = ~EFFORT, y = ~ (UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers")
 
 #Scatter plot estimates with priors vs. without priors for simulated data. Color by eagle rate, size by effort. 1:1 Line for comparison
-plot_ly(sim3)%>%
-  add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~b,
+fig1a <- plot_ly(sim3)%>%
+  add_trace(y = ~MN_F, x = ~MN, size = ~b,
+            type = "scatter", mode = "markers",
             marker = list(line = list(color = "black"),
-                          sizemode = "diameter",
-                          colorbar = list(y = 0.75, x = 0.85,
-                                          title = "Eagle Activity<br>Rate")
+                          sizemode = "diameter"
             ),
-            sizes = c(5,15), color = ~ eagle_rate, name = "Estimated Eagle Fatalities",
+            sizes = c(5,15), color = ~ eagle_rate,
+            name = "Survey effort",
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = "text")%>%
-  add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)), type = "scatter", mode = "lines", name = "1:1 Line")%>%
-  add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004), type = "scatter", mode = "lines", name = "Mean")%>%
+  add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)),
+            type = "scatter", mode = "lines", name = "1:1 Line")%>%
+  colorbar(x = 0.8, y = 0.6, title = 'Eagle activity<br>rate (min/hr)',
+           titlefont = list(family = 'serif', color = 'black', size = 16))%>%
+  #add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004), type = "scatter", mode = "lines", name = "Mean")%>%
   layout(hovermode = "closest", font = list(color = "black"),
-         xaxis = list(title = "Estimates using Priors"),
-         yaxis = list(title = "Estimates without Priors"),
-         legend = list(x = 0.10, y = 0.95, bordercolor = "black", borderwidth = 1))
+         yaxis = append(list(title = 'Fatalities estimated with priors'), ax),
+         xaxis = append(list(title = 'Fatalities estimated without priors'), ax),
+         legend = list(x = 0.10, y = 0.95, bordercolor = "black", borderwidth = 1,
+                       font = list(family = 'serif', size = 16, color = 'black'),
+                       showgridlines = FALSE))
 
 #Plot deviance between estimates using priors and site-specific estimate as a function of survey effort from simulated data. Color by eagle rate
-plot_ly(sim3)%>%
-  add_trace(x = ~b, y = ~(MN_F-MN), type = "scatter", mode = "markers",
+fig1b <- plot_ly(sim3)%>%
+  add_trace(x = ~b, y = ~(UQ_F-UQ), type = "scatter", mode = "markers",
             color = ~ eagle_rate,
-            marker = list(colorbar = list(title = "Eagle Obs<br>(min)")
-            ),
+            marker = list(colorbar = list(title = "Eagle Obs<br>(min)")),
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = 'text')%>%
+  colorbar(title = 'Eagle activity<br>rate (min/hr)', x = 0.8, y = 0.5,
+           titlefont = list(family = 'serif', size = 14, color = 'black'))%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
-         xaxis = list(title = "Survey Effort (hr*km<sup>3</sup>)"
-         ),
-         yaxis = list(title = "Standardized Deviance")
+         xaxis = append(list(title = "Survey effort (hr*km<sup>3</sup>)"), ax),
+         yaxis = append(list(title = "Difference in estimated fatalities (# eagles)"), ax)
   )
 
 #Scatter plot size of 80% CI as a function of survey effort for simulated data. Color by eagle rate
@@ -296,14 +319,16 @@ plot_ly(sim3)%>%
 glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 
 #PLOT FOR ZERO OBSERVED EAGLES
-plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
-        color = ~Hectares, type = 'scatter', mode = 'marker',
-        marker = list(colorbar = list(x = 0.7, y = 1, title = "Project<br>Size (ha)")),
+fig2 <- plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
+        color = ~Hectares, type = 'scatter', mode = 'markers',
+        #marker = list(colorbar = list(x = 0.7, y = 1, title = "Project<br>Size (ha)")),
         hoverinfo = 'text',
         text = ~paste("Effort:", Effort, "hr*km<sup>3</sup>", "<br>Project Size:", Hectares, "ha", "<br>Fatalities:", round(UQ_F, 1), "eagles"))%>%
+  colorbar(x = 0.8, y = 1, title = 'Project size<br>(# turbines)<br>',
+           font = list(family = 'serif', size = 14, color = 'black'))%>%
   layout(legend = list(x = 0.7, y = 1),
-         xaxis = list(title = "Effort (hr*km2)"),
-         yaxis = list(title = "Predicted Annual Eagle Fatalities"))
+         xaxis = append(list(title = "Effort (hr*km<sup>3</sup>)"), ax),
+         yaxis = append(list(title = "Estimated eagle fatalities"), ax))
 
 #COST BENEFIT ANALYSIS
 #Data from West
@@ -355,17 +380,14 @@ plot_ly(type = 'contour', z = acast(test_cost_surface, erate~size, value.var = "
     xaxis = list(title = 'Project Size (# Turbines)')
   )
 
-
-plot_ly(type = 'heatmap', z = acast(low_cost_surface, erate~size, value.var = "effort"),
-        y = seq(0,3,0.05), x = seq(20,500,20),
-        colorbar = list(title = 'Survey<br>Effort<br>(hr*km<sup>3</sup>)'))%>%
+# Minimum cost effort
+fig4 <- plot_ly(type = 'heatmap', z = acast(low_cost_surface, erate~size, value.var = "effort"),
+        y = seq(0,3,0.05), x = seq(20,500,20))%>%
+  colorbar(title = 'Survey effort<br>(hr*km<sup>3</sup>)',
+           titlefont = list(family = 'serif', color = 'black', size = 14))%>%
   layout(
-    yaxis = list(title = 'Eagle Activity Rate (min/hr*km<sup>3</sup>)',
-                 titlefont = list(color = 'black', size = 14),
-                 tickfont = list(color = 'black', size = 12)),
-    xaxis = list(title = 'Project Size (# Turbines)',
-                 titlefont = list(color = 'black', size = 14),
-                 tickfont = list(color = 'black', size = 12))
+    yaxis = append(list(title = 'Eagle activity rate (min/hr*km<sup>3</sup>)'), ax),
+    xaxis = append(list(title = 'Project size (# turbines)'), ax)
   )
 
 #For a given project size, how does the min effort change with eagle rate
@@ -455,4 +477,6 @@ high_high <- mutate(test_values, mrate = 38000, srate = 417)%>%
   plyr::mdply(min_cost)
 
 # optimization to minimize eagle death
+# what proportion of simulated scenarios would reduce their costs by continued monitoring
 
+# slope of discrepancy is proportional to (alpha - (rate*beta))/(beta+x)
