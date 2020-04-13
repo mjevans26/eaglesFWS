@@ -32,19 +32,14 @@ library(tidyr)
 library(viridis)
 
 source("R/helper_fxns.R")
-load("data/surfaces.rdata")
+load("data/cost_surfaces_95.rdata")
 #Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
 cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
 
-# Turbine to size conversion factor
-# 365 days * 10hrs per day
-# 200m tall turbine
-# 80m blade radius
-cf <- 3650*(0.2)*(0.08^2)*pi
-
 # Create different combinations of eagle rates and project sizes. 
 # For testing purposes, assume all turbines are 200m tall w/80m blades
-test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*cf)
+test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*expFac)
+
 #test-values <- mutate(test_values, mrate = 15200, srate = 167)
 effort_df <- data.frame(effort = seq(0, 500, 1))
 
@@ -64,7 +59,7 @@ a <- list(
 )
 
 plot_curves <- function(erate, nturb, mcost, scost){
-  size <- nturb*cf
+  size <- nturb*expFac
   output <- plyr::mdply(effort_df, cost_curve, erate, size, mcost, scost)
   min_effort <- output$effort[output$T == min(output$T)]
   plot_ly(data = output, type = 'scatter', mode = 'lines')%>%
@@ -113,10 +108,13 @@ retro_costs <- list('Low' = 1040, 'High' = 2590)
 electro_rates <- list('Low' = 0.0036, 'Median' = 0.0051, 'High' = 0.0066)
 durations <- c(10, 20, 30, 40, 50)
 
+#' Create a plotly heatmap of minimum cost survey efforts
+#' @param df matrix storing minimum cost efforts for eagle rate x project size combos
+#' @return plotly heatmap
 plot_surface <- function(df){
   plot_ly(type = 'heatmap', z = acast(df, erate~size, value.var = "effort"),
-        y = seq(0,3,0.05), x = seq(20,500,20),
-        zmin = 0, zmax = 400,
+        y = seq(0,2,0.05), x = seq(20,500,20),
+        zmin = 0, zmax = 50,
         colorbar = list(title = 'Survey<br>Effort<br>(hr*km<sup>3</sup>)')
         )%>%
   layout(
@@ -133,7 +131,7 @@ select_scost <- selectInput('scost', 'Survey cost per hour',
                             list('Low ($167)' = 'Low',
                                  'High ($417)' = 'High'), selected = 'Low ($167/hr)')
 
-select_mcost <- selectInput('mcost', 'Mitigation cost per eagle',
+select_mcost <- selectInput('mcost', 'Mitigation cost per retrofit',
                             list('Low ($1,040)' = 'Low',
                                  'High ($2,590)' = 'High'))
 

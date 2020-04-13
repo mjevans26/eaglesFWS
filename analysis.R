@@ -8,7 +8,8 @@ library(tidyr)
 library(rv)
 library(viridis)
 
-source("C:/Users/mevans/repos/eaglesFWS/inst/eagles-fws/helper_fxns.R")
+source("C:/Users/mevans/repos/eaglesFWS/R/helper_fxns.R")
+load('vignettes/data/newdata.RData')
 
 # define plot styles
 # axis format
@@ -35,10 +36,10 @@ site_preds18 <- vapply(1:nrow(Bay16), function(x) {
                   Fatal = -1,
                   SmpHrKm = Bay16$EFFORT[x],
                   ExpFac = Bay16$SCALE[x],
-                  aPriExp = 11.81641,
-                  bPriExp = 9.7656250,
-                  aPriCPr = 1.638029,
-                  bPriCPr = 290.0193,
+                  aPriExp = goldExposure$shape,
+                  bPriExp = goldExposure$rate,
+                  aPriCPr = goldCollision$shape,
+                  bPriCPr = goldCollision$rate,
                   iters = 1000)
   #out <- prediction(10000, a, b)
   #fatality <- mean(out$fatality)
@@ -50,8 +51,8 @@ site_preds18 <- vapply(1:nrow(Bay16), function(x) {
                    ExpFac = Bay16$SCALE[x],
                    aPriExp = 0,
                    bPriExp = 0,
-                   aPriCPr = 1.638029,
-                   bPriCPr = 290.0193,
+                   aPriCPr = goldCollision$shape,
+                   bPriCPr = goldCollision$rate,
                    iters = 1000)
   fatality2 <- mean(out2$fatality)
   q82 <- quantile(out2$fatality, c(0.8))
@@ -67,94 +68,100 @@ Bay16$UQ <- site_preds18[4,]
 #Bay16$U_F <- site_preds[7,]
 #Bay16$U <- site_preds[8,]
 
-#function to return mean and 80% CI estimates from a predicted fatality distribution
-#hardwired to use Bay16 data as exposure priors
-estimates <- function(iters, a, b){
-  out <- simFatal(BMin = a,
-                  Fatal = -1,
-                  SmpHrKm = b,
-                  ExpFac = mean(Bay16$SCALE),
-                  aPriExp = 11.81641,
-                  bPriExp = 9.7656250,
-                  aPriCPr = 1.638029,
-                  bPriCPr = 290.0193,
-                  iters = iters)
-  fatality <- mean(out$fatality)
-  q80 <- quantile(out$fatality, c(0.8))
-  out2 <- simFatal(BMin = a,
-                  Fatal = -1,
-                  SmpHrKm = b,
-                  ExpFac = mean(Bay16$SCALE),
-                  aPriExp = 0,
-                  bPriExp = 0,
-                  aPriCPr = 1.638029,
-                  bPriCPr = 290.0193,
-                  iters = iters)
-  fatality2 <- mean(out2$fatality)
-  q82 <- quantile(out2$fatality, 0.8)
-  return (c("MN_F" = fatality, "UQ_F" = q80, "MN" = fatality2, "UQ" = q82))
-}
-
 #cretae simulated eagle flight observation and survey data
 #values based off of minimum survey requirements:
 #1hr per plot per month for two years
 #survey plot of 0.8km radius * 0.2km height
 
-flight <- c(0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.15,0.20,0.25,0.50,0.75,1.00,1.50,2.00,2.50,3)
-#Survey time in hours
-time <- seq(1, 10, 1)*12*2
-#Survey area in km3
+# create a range of underlying eagle activity rates (min/hr*km3)
+erate <- seq(0, 2, 0.1)
+#flight <- c(0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10,0.15,0.20,0.25,0.50,0.75,1.00,1.50,2.00,2.50,3)
+
+# Survey time in hours - 24 to 240 hours
+time <- seq(0, 240, 24)
+
+#Survey area in km3 - 1 to five plots
 area <- seq(0.402, 2.01, 0.402)
-df <- expand.grid(TIME = time, AREA = area, eagle_rate = flight)
-#Effort is time(hrs)*area(km3)
-df$b <- df$TIME*df$AREA
-#Eagle activity is min/hr*km3
-df$a <- df$eagle_rate*df$b
 
-uppers <- vapply(1:nrow(df), function(x) {
-  a <- df$a
-  b <- df$b
-  out <- prediction(10000, a+sum(Bay16$FLIGHT_MIN), b+sum(Bay16$EFFORT))
-  q80 <- quantile(out$fatality, 0.8)
-  out2 <- prediction(10000, a, b)
-  q82 <- quantile(out2$fatality, 0.8)
-  return (c("U_F" = q80, "U" = q82))
-}, USE.NAMES = FALSE, FUN.VALUE = c(0,0))
+# Create dataframe including all combinations of survey time, area, and eagle activity
+df <- expand.grid(TIME = time, AREA = area, erate = erate)%>%
+  # Effort is time(hrs)*area(km3)
+  mutate(b = TIME*AREA)%>%
+  # Calculate observed eagle activity in min
+  mutate(a = b*erate)
 
-#create dataset of estimated fatality distributions based on simulated
-#survey and flight observation data
+# create supplemental dataframe to illustrate behavior at low efforts
+suppDf <- expand.grid(TIME = seq(0, 24, 2), AREA = area, erate = erate)%>%
+  mutate(b = TIME*AREA)%>%
+  mutate(a = b*erate)
 
-sim2 <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
-sim <- plyr::mdply(df[, c(5, 4)], estimates, niters = 10000)
-#sim 3 run with new priors
-sim3 <- plyr::mdply(df[,c(5, 4)], estimates, iters = 10000)
-sim3$eagle_rate <- df$eagle_rate
-colnames(sim3) <- c("a", "b", "MN_F", "UQ_F", 'MN', "UQ", 'eagle_rate')
-colnames(sim2)[c(4,5,7,8)] <- c("LQ_F", "UQ_F", "LQ", "UQ")
+df <- bind_rows(df, suppDf)%>%
+  filter(duplicated(b))
 
-#Lets look at the case where there are zero eagles observed
-#We want to plot, for a variety of project sizes, predicted take/effort
+rm(suppDf)
+# save our simulated scenarios
+saveRDS(df, file = 'data/simData.rds')
+
+# generate theoretical curves of discrepancy vs. effort
+p <- plot_ly(type = 'scatter', mode = 'lines')
+for(i in seq(0, 2, 0.2)){
+  crv <- curve(effort_discrepancy_slope(i, goldExposure$rate, goldExposure$shape, x), from = 0, to = 100)
+  p <- add_trace(p, x = crv$x, y = crv$y)
+}
+
+# DEPRICATED
+# return upper quantiles for simulation data
+# uppers <- vapply(1:nrow(df), function(x) {
+#   a <- df$a
+#   b <- df$b
+#   out <- prediction(10000, a+sum(Bay16$FLIGHT_MIN), b+sum(Bay16$EFFORT))
+#   q80 <- quantile(out$fatality, 0.8)
+#   out2 <- prediction(10000, a, b)
+#   q82 <- quantile(out2$fatality, 0.8)
+#   return (c("U_F" = q80, "U" = q82))
+# }, USE.NAMES = FALSE, FUN.VALUE = c(0,0))
+
+# Predict fatalities with and without using priors for simulated scenarios
+sim <- plyr::mdply(df[,c(5, 4)], estimates, niters = 10000, nturbines = 200)%>%
+  # add erate, TIME, AREA columns
+  bind_cols(df[, 1:3])
+
+colnames(sim) <- c("a", "b", "MN_F", "UQ_F", 'MN', "UQ", 'time', 'area', 'eagle_rate')
+
+# save outputs
+saveRDS(sim, file = 'data/simResults_95.rds')
+sim <- readRDS(file = 'data/simResults_95.rds')
+
+# Evaluate cases where there are zero eagles observed
 zeroest <- function(iters, Effort, ExpFac){
   out <- simFatal(BMin = 0,
                   Fatal = -1,
                   SmpHrKm = Effort,
                   ExpFac = ExpFac,
-                  aPriExp = 11.81641,
-                  bPriExp = 9.7656250,
-                  aPriCPr = 1.638029,
-                  bPriCPr = 290.0193,
+                  aPriExp = expose$shape,
+                  bPriExp = expose$rate,
+                  aPriCPr = collide$shape,
+                  bPriCPr = collide$rate,
                   iters = iters)
   fatality <- mean(out$fatality)
   q80 <- quantile(out$fatality, c(0.8))
   return (c("MN_F" = fatality, "UQ_F" = q80))
 }
 
-zerodf <- expand.grid(Time = time, Area = area, Hectares = seq(50, 400, 50))%>%
-  mutate(Effort = Time * Area, ExpFac = 0.005648*(-22558 + 2306*Hectares - 2.61*I(Hectares^2)))
+# Create a simulated dataset of varying efforts at different project sizes
+zerodf <- expand.grid(Time = time, Area = area, nTurb = seq(50, 400, 50))%>%
+  mutate(Effort = Time * Area, ExpFac = turbines_to_size(nTurb))
 
+# Predict fatalities using priors assuming no eagles are observed
 zerosim <- plyr::mdply(zerodf[, 4:5], zeroest, iters = 10000)
+colnames(zerosim)[4] <- "UQ_F"
+zerosim$ExpFac <- zerodf$ExpFac
 
-zerosim$Hectares <- zerodf$Hectares
+# save zerosim data
+saveRDS(zerosim, file = 'data/zeroSim_95.rds')
+zerosim <- readRDS(file = 'data/zeroSim_95.rds')
+
+# Is it better to add plots, or hours?
 
 plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(((UQ_F-MN_F)/(MN_F))/1000),
@@ -217,8 +224,8 @@ plot_ly(Bay16)%>%
   add_trace(x = ~EFFORT, y = ~ (UQ_F-LQ_F)/MN_F, type = "scatter", mode = "markers")
 
 #Scatter plot estimates with priors vs. without priors for simulated data. Color by eagle rate, size by effort. 1:1 Line for comparison
-fig1a <- plot_ly(sim3)%>%
-  add_trace(y = ~MN_F, x = ~MN, size = ~b,
+fig1a <- plot_ly(filter(sim, b > 0, b < 100))%>%
+  add_trace(y = ~UQ_F, x = ~UQ, size = ~b,
             type = "scatter", mode = "markers",
             marker = list(line = list(color = "black"),
                           sizemode = "diameter"
@@ -227,7 +234,7 @@ fig1a <- plot_ly(sim3)%>%
             name = "Survey effort",
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = "text")%>%
-  add_trace(x = ~c(0, max(MN_F)), y = ~c(0, max(MN_F)),
+  add_trace(x = ~c(0, max(UQ_F)), y = ~c(0, max(UQ_F)),
             type = "scatter", mode = "lines", name = "1:1 Line")%>%
   colorbar(x = 0.8, y = 0.6, title = 'Eagle activity<br>rate (min/hr)',
            titlefont = list(family = 'serif', color = 'black', size = 16))%>%
@@ -240,19 +247,39 @@ fig1a <- plot_ly(sim3)%>%
                        showgridlines = FALSE))
 
 #Plot deviance between estimates using priors and site-specific estimate as a function of survey effort from simulated data. Color by eagle rate
-fig1b <- plot_ly(sim3)%>%
+fig1b <- plot_ly(filter(sim, b >0, b < 100, eagle_rate%%0.2 == 0))%>%
   add_trace(x = ~b, y = ~(UQ_F-UQ), type = "scatter", mode = "markers",
             color = ~ eagle_rate,
             marker = list(colorbar = list(title = "Eagle Obs<br>(min)")),
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
             hoverinfo = 'text')%>%
-  colorbar(title = 'Eagle activity<br>rate (min/hr)', x = 0.8, y = 0.5,
+  colorbar(title = 'Eagle activity<br>rate (min/hr)', x = 0.8, y = 1,
            titlefont = list(family = 'serif', size = 14, color = 'black'))%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
          xaxis = append(list(title = "Survey effort (hr*km<sup>3</sup>)"), ax),
          yaxis = append(list(title = "Difference in estimated fatalities (# eagles)"), ax)
   )
+
+p <- plot_ly(type = 'scatter', mode = 'lines')
+for(i in seq(0, 2, 0.2)){
+  crv <- curve(effort_discrepancy_slope(i, goldExposure$shape, goldExposure$rate, x)*turbines_to_size(200), from = 0, to = 100)
+  p <- add_trace(p, x = crv$x, y = crv$y)
+}
+
+plot_ly(d, type = 'scatter', mode = 'lines', x = ~x, y = ~y, color = ~eagle_rate)
+
+#PLOT FOR ZERO OBSERVED EAGLES
+fig2 <- plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
+                color = ~ExpFac/expFac, type = 'scatter', mode = 'markers',
+                #marker = list(colorbar = list(x = 0.7, y = 1, title = "Project<br>Size (ha)")),
+                hoverinfo = 'text',
+                text = ~paste("Effort:", Effort, "hr*km<sup>3</sup>", "<br>Project Size:", ExpFac/expFac, "turbines", "<br>Fatalities:", round(UQ_F, 1), "eagles"))%>%
+  colorbar(x = 0.8, y = 1, title = 'Project size<br>(# turbines)<br>',
+           font = list(family = 'serif', size = 14, color = 'black'))%>%
+  layout(legend = list(x = 0.7, y = 1),
+         xaxis = append(list(title = "Effort (hr*km<sup>3</sup>)"), ax),
+         yaxis = append(list(title = "Estimated eagle fatalities"), ax))
 
 #Scatter plot size of 80% CI as a function of survey effort for simulated data. Color by eagle rate
 plot_ly(sim)%>%
@@ -318,22 +345,11 @@ plot_ly(sim3)%>%
   )
 glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 
-#PLOT FOR ZERO OBSERVED EAGLES
-fig2 <- plot_ly(data = zerosim, x = ~Effort, y = ~UQ_F,
-        color = ~Hectares, type = 'scatter', mode = 'markers',
-        #marker = list(colorbar = list(x = 0.7, y = 1, title = "Project<br>Size (ha)")),
-        hoverinfo = 'text',
-        text = ~paste("Effort:", Effort, "hr*km<sup>3</sup>", "<br>Project Size:", Hectares, "ha", "<br>Fatalities:", round(UQ_F, 1), "eagles"))%>%
-  colorbar(x = 0.8, y = 1, title = 'Project size<br>(# turbines)<br>',
-           font = list(family = 'serif', size = 14, color = 'black'))%>%
-  layout(legend = list(x = 0.7, y = 1),
-         xaxis = append(list(title = "Effort (hr*km<sup>3</sup>)"), ax),
-         yaxis = append(list(title = "Estimated eagle fatalities"), ax))
-
 #COST BENEFIT ANALYSIS
-#Data from West
-monitor_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
-              'annual_low_pMW' = 300, 'annual_high_pMW' = 600)
+#Estimated survey cost data from West Ecosystems Inc.
+survey_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
+                     "Low" = 2000/12, 'High' = 5000/12,
+                     'annual_low_pMW' = 300, 'annual_high_pMW' = 600)
 
 #From Adt report
 retro_costs <- list('Low' = 1040, 'High' = 2590)
@@ -343,52 +359,61 @@ durations <- c(10, 20, 30, 40, 50)
 #Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
 cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
 
-#low cost estimate, 20yr duration, adult golden eagle (0.0051)
+# create dataframe of levels of effort
+effort_df <- data.frame(effort = seq(0, 500, 2))
 
-15200
-38000
-
-#Can't just plug in an observed eagle activity and find the root across efforts - they are dependent.  Need to use
-#Underlying eagle 'rate'
+#' Create line plots showing cost vs. effort curves
+#' @param erate true eagle activity rate (min/hr*km3)
+#' @param nturb number of turbines at hypothetical project
+#' @param mcost assumed per-retrofit mitigation cost
+#' @param scost assumed per-hour survey cost
+#' @return plotly line plot
+#' @example
+#' plot_curves(2, 200, retro_costs$High, survey_costs$High)
+plot_curves <- function(erate, nturb, mcost, scost){
+  size <- nturb*expFac
+  output <- plyr::mdply(effort_df, cost_curve, erate, size, mcost, scost)
+  min_effort <- output$effort[output$T == min(output$T)]
+  plot_ly(data = output, type = 'scatter', mode = 'lines')%>%
+    add_trace(
+      x = ~effort, y = ~T,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1)),
+      line = list(color = 'orange'),
+      showlegend = TRUE,
+      name = 'Total'
+    )%>%
+    add_trace(
+      x = ~effort, y = ~M,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1), dash = 'dash'),
+      line = list(color = 'grey', dash = 'dash'),
+      showlegend = TRUE,
+      name = "Mitigation"
+    )%>%
+    add_trace(
+      x = ~effort, y = ~S,
+      #line = list(color = cols[(i-1)%/%6], width = ((i-1)%%6 +1), dash = 'dot'),
+      line = list(color = 'blue', dash = 'dot'),
+      showlegend = TRUE,
+      name = 'Survey'
+    )%>%
+    add_trace(
+      x = c(min_effort, min_effort), y = c(0, max(output$T)),
+      line = list(color = 'black', width = 1),
+      name = paste('Min cost effort (', min_effort, ' hrs)', sep = "")
+    )%>%
+    layout(
+      xaxis = list(title = 'Survey effort (hr*km<sup>3</sup>)'),
+      yaxis = list(title = 'Cost ($)'),
+      #annotations = a,
+      legend = list(x = 0.2, y = 1)
+    )
+}
 
 #experiment with different ways to find the minimum of the cost function
+# TODO: These all have problems because the stochasticity involved in gibbs sampling creates erratic curves
 optim(par = 18.4, cost_fxn, method = "L-BFGS-B", lower = 0, upper = 10)
 uniroot(cost_fxn, interval = c(0, 500), data = data.frame(activity = 1, size = 10))
 optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = median(df$a), size = median(Bay16$SCALE)))
-
-#For testing purposes, assume all turbines are 200m tall w/80m blades
-test_values <- expand.grid(erate = seq(0,3,0.05), size = seq(20, 500, 20)*3650*(0.2)*(0.08^2)*pi)
-test_values <- mutate(test_values, mrate = 38000, srate = 167)
-#test_cost_surface <- plyr::mdply(test_values, optim_fxn)
-
-test_cost_surface <- plyr::mdply(test_values, min_cost)
-colnames(test_cost_surface) <- c("erate", 'size', 'effort', 'cost')
-
-plot_ly(type = 'contour', z = acast(test_cost_surface, erate~size, value.var = "effort"),
-        y = seq(0,3,0.01), x = seq(20,500,20),
-        colorbar = list(title = 'Survey<br>Effort<br>(hr*km3)'),
-        autocontour = FALSE,
-        contours = list(
-          start = 201,
-          end = 201,
-          size = 1,
-          coloring = 'heatmap'),
-        line = list(smoothing = 5)
-        )%>%
-  layout(
-    yaxis = list(title = 'Eagle Activity Rate (min/hr*km3)'),
-    xaxis = list(title = 'Project Size (# Turbines)')
-  )
-
-# Minimum cost effort
-fig4 <- plot_ly(type = 'heatmap', z = acast(low_cost_surface, erate~size, value.var = "effort"),
-        y = seq(0,3,0.05), x = seq(20,500,20))%>%
-  colorbar(title = 'Survey effort<br>(hr*km<sup>3</sup>)',
-           titlefont = list(family = 'serif', color = 'black', size = 14))%>%
-  layout(
-    yaxis = append(list(title = 'Eagle activity rate (min/hr*km<sup>3</sup>)'), ax),
-    xaxis = append(list(title = 'Project size (# turbines)'), ax)
-  )
 
 #For a given project size, how does the min effort change with eagle rate
 plot_ly(type = 'scatter', mode = 'lines')%>%
@@ -410,7 +435,7 @@ sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
                    round(size, 4) %in% c(293.5504, 1761.3025, 3816.1554, 5871.0084, 7338.7604))
 
 
-#Example curves showing effort/cost tradeoff
+# Lattice of example curves showing effort/cost relationships at a variety of scenarios
 multiplot <- function(i){
   cst <- curve(cost(x, sub_test$erate[i], sub_test$size[i], 'Total'),
                from = 0, to = 500)
@@ -448,7 +473,7 @@ multiplot <- function(i){
     )
 }
 
-s1 <- subplot(lapply(1:nrow(sub_test), multiplot),
+fig3 <- subplot(lapply(1:nrow(sub_test), multiplot),
               nrows = 5, shareY = TRUE,
               titleY = TRUE, shareX =TRUE,titleX= TRUE)%>%
   layout(yaxis = list(title = ''),
@@ -463,18 +488,37 @@ s1 <- subplot(lapply(1:nrow(sub_test), multiplot),
          xaxis5 = list(title = ''),
          xaxis6 = list(title = ''))
 
+# Cost Surfaces
+# Create a simulation dataset of project sizes and true eagle activity rates
+# For testing purposes, assume all turbines are 200m tall w/80m blades
+test_values <- expand.grid(erate = seq(0,2,0.05),
+                           size = turbines_to_size(seq(20, 500, 20)))
+
 # pre calculate matrices representing optimized effort for different combinations of
 # estimated mitigation and survey costs By default, low and high values are defined for
 # median electrocution rate (0.0051 eagles/pole*yr) and 20 year retrofit duration
 # TODO: incorporate different durations?
-low_low <- mutate(test_values, mrate = 15200, srate = 167)%>%
+low_low <- mutate(test_values, mrate = retro_costs$Low, srate = survey_costs$Low)%>%
   plyr::mdply(min_cost)
-low_high <- mutate(test_values, mrate = 15200, srate = 417)%>%
+low_high <- mutate(test_values, mrate = retro_costs$Low, srate = survey_costs$High)%>%
   plyr::mdply(min_cost)
-high_low <- mutate(test_values, mrate = 38000, srate = 167)%>%
+high_low <- mutate(test_values, mrate = retro_costs$High, srate = survey_costs$Low)%>%
   plyr::mdply(min_cost)
-high_high <- mutate(test_values, mrate = 38000, srate = 417)%>%
+high_high <- mutate(test_values, mrate = retro_costs$High, srate = survey_costs$High)%>%
   plyr::mdply(min_cost)
+
+save(high_high, low_low, low_high, high_low, file = 'data/cost_surfaces_95.rdata')
+
+# Create heatmap of minimum cost efforts
+fig4 <- plot_ly(type = 'heatmap', z = acast(low_high, erate~size, value.var = "effort"),
+                y = seq(0,2,0.05), x = seq(20,500,20),
+                zmin = 0, zmax = 50)%>%
+  colorbar(title = 'Survey effort<br>(hr*km<sup>3</sup>)',
+           titlefont = list(family = 'serif', color = 'black', size = 14))%>%
+  layout(
+    yaxis = append(list(title = 'Eagle activity rate (min/hr*km<sup>3</sup>)'), ax),
+    xaxis = append(list(title = 'Project size (# turbines)'), ax)
+  )
 
 # optimization to minimize eagle death
 # what proportion of simulated scenarios would reduce their costs by continued monitoring

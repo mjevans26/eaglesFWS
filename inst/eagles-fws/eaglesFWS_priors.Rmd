@@ -1,9 +1,9 @@
 ---
 title: "FWS Eagle Mortality Model"
-author: "Michael Evans, Defenders of Wildlife"
+author: "Michael Evans"
 output: 
   flexdashboard::flex_dashboard:
-    css: custom.css
+    css: www/dashboard.css
     social: menu
     df_print: paged
     navbar:
@@ -26,32 +26,30 @@ library(plotly)
 library(shiny)
 library(viridis)
 
-load("app_data.RData")
-source("helper_fxns.R")
+load("data/app_data.RData")
+source("R/helper_fxns.R")
 #source("exposure.R")
 #source("fatality.R")
 
-prior <- curve(dgamma(x, shape = 11.81641,  
-                      rate = 9.765625),
-               from = 0.5,
-               to = 3)
+prior <- curve(dgamma(x, shape = expose$shape,  
+                      rate = expose$rate),
+               from = 0.01,
+               to = 6)
 
-priorb <- curve(dgamma(x, shape = 1.52522,
-                       rate = 0.4781255),
+priorb <- curve(dgamma(x, shape = expose$shape,
+                       rate = expose$rate),
                 from = 0,
                 to = 10)
 
-collision <- curve(dbeta(x, shape1 = 1.638029, shape2 = 290.0193), 
+collision <- curve(dbeta(x, shape1 = collide$shape, shape2 = collide$rate), 
                    from = 0, 
                    to = 0.04)
 
-collisionb <- curve(dbeta(x, shape1 = 2.573610, shape2 = 366.3502),
+collisionb <- curve(dbeta(x, shape1 = collide$shape, shape2 = collide$rate),
                     from = 0,
                     to = 0.04)
 
 act <- mean(Bay16$FLIGHT_MIN)/mean(Bay16$EFFORT)
-
-scale <- glm(data = Bay16, (COLLISIONS/(FLIGHT_MIN/EFFORT))/0.002895415 ~ RISK_HA + I(RISK_HA^2))
 
 tab <- select(Bay16, 
                     SITE, TURBINES, 
@@ -69,118 +67,9 @@ dt <- DT::datatable(tab,
                                  )
                 )%>%
   formatRound("EFFORT", 2)
-```
 
-Inputs {.sidebar}
-====================
-Enter the proposed project specs:
-
-```{r selector, echo = FALSE}
-column(6,
-       numericInput('n', 'Number of Turbines',
-            value = 100,
-            min = 0, 
-            max = 1000,
-            width = '100%'),
-       numericInput('t', 'Hours of Operation',
-             value = 10,
-             min = 8, 
-             max = 14,
-             width = '100%')
-)
-column(6,
-       numericInput('h', 'Turbine Height (m)',
-             value = 200,
-             min = 100,
-             max = 300,
-             width = '100%'),
-       numericInput('r', 'Rotor Radius (m)',
-             value = 30,
-             min = 20,
-             max = 100,
-             width = '100%')
-)
-#numericInput('size',
-#            "Project Area (ha)",
-#            value = round(mean(Bay16$RISK_HA), 0),
-#            min = 0,
-#            max = 500,
-#            step = 1
-#            )
-```
-
-Area surveyed for eagles. FWS requres at least one cylindrical plot of 800m radius (201 ha) by 200m height.
-
-```{r echo = FALSE}
-sliderInput("area",
-            "Survey Area (ha)",
-            min = 0,
-            max = 2010,
-            value = 201,
-            step = 201)
-```
-
-Time spent surveying.  FWS requires at least 12 hrs per year, for two years.
-
-```{r echo = FALSE}
-sliderInput("hrs",
-            "Survey Hours",
-            min = 0,
-            max = 240,
-            value = 24,
-            step = 12)
-```
-
-Enter the amount of time eagles were observed flying within survey cylinders.
-
-```{r echo = FALSE}
-numericInput("min",
-            "Flight Time (min)",
-            value = 7,
-            min = 0)
-
-
-
-#cur_min <- reactive({Bay16$FLIGHT_MIN[Bay16$SITE == input$sites]})
-cur_min <- reactive({input$min})
-#cur_effort <- reactive({Bay16$EFFORT[Bay16$SITE == input$sites]})
-cur_effort <- reactive({input$hrs * (input$area * 0.01) * 0.2})
-#cur_scale <- reactive({Bay16$SCALE[Bay16$SITE == input$sites]})
-cur_scale <- reactive({(input$t*365) * input$n * input$h/1000 * ((input$r/1000)^2) * pi})
-#cur_scale <- reactive({-362.57580 + (input$size*33.38994) + ((input$size^2)*-0.03774)})
-a <- reactive({11.81641 + cur_min()})
-b <- reactive({9.7656250 + cur_effort()})
-ab <- reactive({1.52522 + cur_min()})
-bb <- reactive({0.4781255 + cur_min()})
-```
-
-
-```{r update, echo = FALSE}
-actionButton("update", "Update Distributions")
-```
-
-`r hr()`
-
-```{r calculate, echo = FALSE}
-actionButton("calculate", "Calculate Fatalities")
-
-```
-
-`r hr()`
-
-```{r note, echo = FALSE}
-helpText("Note: Calcuating predicted fatality distributions takes time.  Please allow several seconds for the graph to load.")
-```
-
-# Golden Eagles
-
-Column 
---------------------------------------------------------------------------
-
-### Eagle Activity (_Click 'Update Distributions'_)
-
-```{r exposures, echo = FALSE}
-modalDialog(
+# Create model dialog
+introModal <- modalDialog(
   title = h2("Bayesian Eagle Mortality Prediction"),
   p("The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model to estimate the number of bald and golden eagles likely to be killed by proposed wind projects.
 This approach combines surveys of eagle activity at proposed sites with prior information about eagle collision and activity rates across existing wind farms to estimate the likely number of fatalities."),
@@ -196,47 +85,198 @@ p("The tabs at the top of the page allow you to switch between golden and bald e
   easyClose = TRUE
   )
 
-observeEvent(input$update, {
-  act <- isolate({cur_min()/cur_effort()})
-  obs <- isolate({density(rgamma(10000, 
-                                 shape = a(), 
-                                 rate = b()
-                                 )
-                          )
-    })
-  
-output$exposure <- renderPlotly({ 
-    plot_ly()%>%
-      add_trace(x = ~c(act, act), y = ~c(0,max(c(prior$y,obs$y))),
-                type = "scatter", mode = "lines",
-                name = "Observed", line = list(color = vir_col(3)[2]),
-                text = ~paste("Observed Activity<br>at site = ",
-                              round(act,2),
-                              sep = ""),
-                hoverinfo = "text")%>%
-      add_trace(x = prior$x, y = prior$y,
+# define inputs
+selectTurbines <- numericInput('n',
+                               'Number of Turbines',
+                               value = 100,
+                               min = 0, 
+                               max = 1000,
+                               width = '100%')
+
+selectHours <- numericInput('t',
+                            'Hours of Operation',
+                            value = 10,
+                            min = 8, 
+                            max = 14,
+                            width = '100%')
+selectHeight <- numericInput('h',
+                             'Turbine Height (m)',
+             value = 200,
+             min = 100,
+             max = 300,
+             width = '100%')
+
+selectRadius <-  numericInput('r',
+                              'Rotor Radius (m)',
+             value = 30,
+             min = 20,
+             max = 100,
+             width = '100%')
+
+plotSlider <- sliderInput("area",
+            "Survey plots (#)",
+            min = 0,
+            max = 5,
+            value = 1,
+            step = 1)
+
+timeSlider <- sliderInput("hrs",
+            "Survey Hours",
+            min = 0,
+            max = 240,
+            value = 24,
+            step = 12)
+
+flightMin <- numericInput("min",
+            "Flight Time (min)",
+            value = 7,
+            min = 0)
+
+# reactive functions using inputs to define model parameters
+cur_min <- reactive({input$min})
+
+cur_effort <- reactive({input$hrs * (input$area) * 0.402})
+
+cur_scale <- reactive({(input$t*365) * input$n * input$h/1000 * ((input$r/1000)^2) * pi})
+
+a <- reactive({expose$shape + cur_min()})
+b <- reactive({expose$rate + cur_effort()})
+
+exposurePlot <- function(min, hours, area){
+  b <- hours*area
+  post <- curve(dgamma(x, min + expose$shape, b+expose$rate),
+                from = 0.01, to = 6)
+  obs <- min/b
+  plot_ly()%>%
+      add_trace(name = 'Prior',
+                x = prior$x, y = prior$y,
                 type = "scatter", mode = "lines", fill = "tozeroy",
-                name = "Prior", line = list(color = vir_col(3)[1]),
+                line = list(color = vir_col(3)[1]),
+                fillcolor = vir_col(3)[1],
                 text = ~paste("Prior Activity<br>estimate = ",
                               round(prior$x, 2),
                               sep = ""),
                 hoverinfo = "text")%>%
-      add_trace(x = ~obs$x, y = ~obs$y,
+      add_trace(name = "Survey + prior", 
+                x = ~post$x, y = ~post$y,
                 type = "scatter", mode = "lines", fill = "tozeroy",
-                name = "Combined", line = list(color = vir_col(3)[3]),
+                line = list(color = vir_col(3)[3]),
+                fillcolor = vir_col(3)[3],
                 text = ~paste("Combined Activity<br>estimate = ",
-                              round(obs$x, 2),
+                              round(post$x, 2),
                               sep = ""),
                 hoverinfo = "text")%>%
+      add_trace(name = 'Observed',
+                x = ~c(obs, obs), y = ~c(0,1.5),#max(c(prior$y,post$y))),
+                type = "scatter", mode = "lines",
+                line = list(color = 'black'),
+                text = ~paste("Observed Activity<br>at site = ",
+                              round(act,2),
+                              sep = ""),
+                hoverinfo = "text")%>%      
       layout(#title = "Eagle Exposure",
              xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)",
-                          range = c(0,10)),
+                          range = c(0,6)),
              yaxis = list(title = "Probability Density"),
              legend = list(x = 0.7,
                            y = 1))
-   })
+}
+    
+output$exposure <- renderPlotly({exposurePlot(input$min, input$hrs, input$area)})
+```
 
-})
+Inputs {.sidebar data-width=400}
+====================
+
+### <i class="fa fa-sliders"></i> Parameters
+
+Project specs:
+
+```{r selector, echo = FALSE}
+column(6, selectTurbines, selectHours)
+
+column(6, selectHeight, selectRadius)
+```
+
+Survey area (FWS minimum = 1 plot ~ 201 ha)
+
+```{r echo = FALSE}
+plotSlider
+```
+
+Survey time (FWS minimum = 24 hrs)
+
+```{r echo = FALSE}
+timeSlider
+```
+
+Observed eagle flight time
+
+```{r echo = FALSE}
+flightMin 
+```
+
+`r hr()`
+
+```{r calculate, echo = FALSE}
+actionButton("calculate", "Calculate Fatalities")
+helpText("Note: Calcuating predicted fatality distributions takes time.  Please allow several seconds for the graph to load.")
+```
+
+`r hr()`
+
+# Golden Eagles
+
+Column 
+--------------------------------------------------------------------------
+
+### Eagle Activity
+
+```{r exposures, echo = FALSE}
+# call introModal to make modal appear
+introModal
+
+# observeEvent(input$update, {
+#   obs <- isolate({cur_min()/cur_effort()})
+#   post <- isolate({curve(dgamma(x, shape = a(), rate = b()), from = 0, to = 6)})
+#   
+#   output$exposure <- renderPlotly({
+#     plot_ly()%>%
+#       add_trace(name = 'Prior',
+#                 x = prior$x, y = prior$y,
+#                 type = "scatter", mode = "lines", fill = "tozeroy",
+#                 line = list(color = vir_col(3)[1]),
+#                 fillcolor = vir_col(3)[1],
+#                 text = ~paste("Prior Activity<br>estimate = ",
+#                               round(prior$x, 2),
+#                               sep = ""),
+#                 hoverinfo = "text")%>%
+#       add_trace(name = "Survey + prior", 
+#                 x = ~post$x, y = ~post$y,
+#                 type = "scatter", mode = "lines", fill = "tozeroy",
+#                 line = list(color = vir_col(3)[3]),
+#                 fillcolor = vir_col(3)[3],
+#                 text = ~paste("Combined Activity<br>estimate = ",
+#                               round(post$x, 2),
+#                               sep = ""),
+#                 hoverinfo = "text")%>%
+#       add_trace(name = 'Observed',
+#                 x = ~c(obs, obs), y = ~c(0,1.5),#max(c(prior$y,post$y))),
+#                 type = "scatter", mode = "lines",
+#                 line = list(color = 'black'),
+#                 text = ~paste("Observed Activity<br>at site = ",
+#                               round(act,2),
+#                               sep = ""),
+#                 hoverinfo = "text")%>%      
+#       layout(#title = "Eagle Exposure",
+#              xaxis = list(title = "Eagle Activity (min/km<sup>3</sup>*hr)",
+#                           range = c(0,6)),
+#              yaxis = list(title = "Probability Density"),
+#              legend = list(x = 0.7,
+#                            y = 1))
+#    })
+# 
+# })
 
 plotlyOutput("exposure")
 ```
@@ -249,43 +289,59 @@ plotlyOutput("exposure")
 observeEvent(input$calculate,{
   #if(input$sites != ""){
     outb <- isolate({simFatal(iters = 10000, BMin = cur_min(), SmpHrKm = cur_effort(),
-                             aPriExp=1.52522, bPriExp=0.4781255,
-                             aPriCPr=2.573610, bPriCPr=366.3502)})
+                             aPriExp=expose$shape, bPriExp=expose$rate,
+                             aPriCPr=collide$shape, bPriCPr=collide$rate)})
     fatalityb <- isolate({density(outb$fatality*cur_scale())})
     q80b <- isolate({quantile(outb$fatality*cur_scale(), 0.8)})
 
     out2b <- isolate({simFatal(iters = 10000, BMin = cur_min(), SmpHrKm = cur_effort(),
                              aPriExp = 0, bPriExp = 0,
-                             aPriCPr = 2.573610, bPriCPr = 366.3502)})
+                             aPriCPr = collide$shape, bPriCPr = collide$rate)})
     fatality2b <- isolate({density(out2b$fatality*cur_scale())})
     q82b <- isolate({quantile(out2b$fatality*cur_scale(), c(0.8))})
     
 output$fatalityb <- renderPlotly({
         plot_ly()%>%
-          add_trace(x = ~fatalityb$x, y = ~fatalityb$y, type = "scatter", mode = "lines",
+          add_trace(name = "Survey + prior", 
+                    x = ~fatalityb$x, y = ~fatalityb$y,
+                    type = "scatter", mode = "lines",
                     fill = "tozeroy",
-                    name = "Incl. Prior Exposure", line = list(color = vir_col(3)[3]),
-                    text = ~paste("Predicted fatalities<br>incorporating prior = ",
+                    fillcolor = vir_col(3)[3],
+                    line = list(color = vir_col(3)[3]),
+                    text = ~paste("Probability of ", 
                                   round(fatalityb$x, 2),
+                                  " fatalities<br>using prior = ",
+                                  round(fatalityb$y, 2),
                                   sep = ""),
                     hoverinfo = "text")%>%
-          add_trace(x = ~c(q80b, q80b), y = ~ c(0, max(fatalityb$y)),
+          add_trace(name = "80th Percentile",
+                    x = ~c(q80b, q80b), y = ~ c(0, max(fatalityb$y)),
                     mode = 'lines', type = 'scatter',
                     line = list(color = vir_col(3)[3]),
-                    name = "80th Percentile")%>%
-          add_trace(x = ~fatality2b$x, y = ~fatality2b$y, type = "scatter", 
+                    text = ~paste('Annual FWS estimate<br>survey + prior =',
+                                  round(q80b, 2)),
+                    hoverinfo = 'text'
+                    )%>%
+          add_trace(name = "Survey only",
+                    x = ~fatality2b$x, y = ~fatality2b$y,
+                    type = "scatter", 
                     mode = "lines",
                     fill = "tozeroy",
                     line = list(color = vir_col(3)[2]), 
-                    name = "Using Site Survey Only",
-                    text = ~paste("Predicted fatalities<br>from site survey = ",
+                    text = ~paste("Probability of ",
                                   round(fatality2b$x, 2),
+                                  " fatalities<br>using survey data = ",
+                                  round(fatality2b$y, 2),
                                   sep = ""),
                     hoverinfo = "text")%>%
-          add_trace(x = ~c(q82b, q82b), y = ~ c(0, max(fatality2b$y)),
+          add_trace(name = "80th Percentile",
+                    x = ~c(q82b, q82b), y = ~ c(0, max(fatality2b$y)),
                     mode = 'lines', type = 'scatter',
                     line = list(color = vir_col(3)[2]),
-                    name = "80th Percentile")%>%
+                    text = ~paste('Annual FWS estimate<br>survey only =',
+                                  round(q80b, 2)),
+                    hoverinfo = 'text'                   
+                    )%>%
           layout(##title = "Predicted Annual Eagle Fatalities",
                  xaxis = list(title = "Fatalities per Year"),
                  yaxis = list(title = "Probability Density"),
