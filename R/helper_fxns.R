@@ -206,7 +206,7 @@ cost <- function(effort, a, size, mrate, srate){
   S <- effort * srate#167
   total_cost <- M+S
 
-  return(list('T' = total_cost[1,], 'M' = M[1,], 'S' = S, 'E' = E))
+  return(list('T' = total_cost[1,], 'M' = M[1,], 'S' = S, 'E' = E[1,]))
   #if (return == 'T'){
   #  return(total_cost[1,])
   #}else if (return == "M"){
