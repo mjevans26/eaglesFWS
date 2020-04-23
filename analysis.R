@@ -37,7 +37,6 @@ a <- list(
   xanchor = 'left',
   showarrow = TRUE,
   arrowhead = 0,
-  ax = 0,
   ay = -60
 )
 
@@ -166,7 +165,7 @@ zeroest <- function(iters, Effort, ExpFac){
 
 # Create a simulated dataset of varying efforts at different project sizes
 zerodf <- expand.grid(Time = time, Area = area, nTurb = seq(50, 400, 50))%>%
-  mutate(Effort = Time * Area, ExpFac = turbines_to_size(nTurb))
+  mutate(Effort = Time * Area, ExpFac = turbines_to_size(nTurb, 100, 50))
 
 # Predict fatalities using priors assuming no eagles are observed
 zerosim <- plyr::mdply(zerodf[, 4:5], zeroest, iters = 10000)
@@ -177,7 +176,9 @@ zerosim$ExpFac <- zerodf$ExpFac
 saveRDS(zerosim, file = 'data/zeroSim_95.rds')
 zerosim <- readRDS(file = 'data/zeroSim_95.rds')
 
-# Is it better to add plots, or hours?
+# FACTS
+# effort needed to reduce largest facility with 0 eagles to < 1 fatality/5yr
+effort_needed(500, 0, 0.2)
 
 plot_ly(Bay16)%>%
     add_trace(x = ~MN_F, y = ~MN, type = "scatter", mode = "markers", size = ~(((UQ_F-MN_F)/(MN_F))/1000),
@@ -252,7 +253,7 @@ fig1a <- plot_ly(filter(sim, b > 0, b < 100))%>%
             hoverinfo = "text")%>%
   add_trace(x = ~c(0, max(UQ_F)), y = ~c(0, max(UQ_F)),
             type = "scatter", mode = "lines", name = "1:1 Line")%>%
-  colorbar(x = 0.8, y = 0.6, title = 'Eagle activity<br>rate (min/hr)',
+  colorbar(x = 0.8, y = 0.6, title = 'Eagle activity<br>rate (min/hr*km<sup>3</sup>)',
            titlefont = list(family = 'serif', color = 'black', size = 16))%>%
   #add_trace(x = ~c(0.002, 0.006), y = ~c(0.004, 0.004), type = "scatter", mode = "lines", name = "Mean")%>%
   layout(hovermode = "closest", font = list(color = "black"),
@@ -272,12 +273,12 @@ fig1b <- plot_ly(filter(sim, b >0, b %% 9.648 == 0))%>%
             text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup><br>Eagles =", a, "(min)<br>Deviance = ", (UQ_F-UQ)/UQ),
             hoverinfo = 'text')%>%
   colorbar(x = 0.8, y = 0.8,
-           title = 'Survey<br>effort (hr*km<sup>3</sup>)',
+           title = 'Survey effort<br>(hr*km<sup>3</sup>)',
            titlefont = list(family = 'serif', color = 'black', size = 16))%>%
   layout(hovermode = 'closest',
          font = list(color = 'black'),
-         xaxis = append(list(title = "Eagle Obs (min)"), ax),
-         yaxis = append(list(title = "Standardized Deviance"), ax)
+         xaxis = append(list(title = "Eagle activity rate (min/hr*km<sup>3</sup>)"), ax),
+         yaxis = append(list(title = "Standardized deviance"), ax)
   )
 
 #Plot deviance between estimates using priors and site-specific estimate as a function of survey effort from simulated data. Color by eagle rate
@@ -285,9 +286,10 @@ fig2a <- plot_ly(filter(sim, b >0, b < 100, eagle_rate%%0.2 == 0))%>%
   add_trace(x = ~b, y = ~(UQ_F-UQ), type = "scatter", mode = "markers",
             color = ~ eagle_rate,
             marker = list(colorbar = list(title = "Eagle Obs<br>(min)")),
-            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate),
+            text = ~paste("Effort =", round(b, 3), "hr*km<sup>3</sup>", "<br>Eagles =", eagle_rate, "<br>Delta =", round(UQ_F - UQ, 2)),
             hoverinfo = 'text')%>%
-  colorbar(title = 'Eagle activity<br>rate (min/hr)', x = 0.8, y = 1,
+  colorbar(title = 'Eagle activity<br>rate (min/hr)',
+           x = 0.8, y = 1,
            titlefont = list(family = 'serif', size = 14, color = 'black'))%>%
   layout(hovermode = 'closest',
          annotations = a,
@@ -298,7 +300,7 @@ fig2a <- plot_ly(filter(sim, b >0, b < 100, eagle_rate%%0.2 == 0))%>%
 
 p <- plot_ly(type = 'scatter', mode = 'lines')
 for(i in seq(0, 2, 0.2)){
-  crv <- curve(effort_discrepancy_slope(i, goldExposure$shape, goldExposure$rate, x)*turbines_to_size(200), from = 0, to = 100)
+  crv <- curve(effort_discrepancy_slope(i, goldExposure$shape, goldExposure$rate, x)*turbines_to_size(200, 100, 50), from = 0, to = 100)
   p <- add_trace(p, x = crv$x, y = crv$y)
 }
 
@@ -312,9 +314,9 @@ fig2b <- plot_ly(data = filter(zerosim, Effort > 0.402, Effort <= 100),
                 hoverinfo = 'text',
                 text = ~paste("Effort:", Effort, "hr*km<sup>3</sup>", "<br>Project Size:", ExpFac/expFac, "turbines", "<br>Fatalities:", round(UQ_F, 1), "eagles"))%>%
   colorbar(x = 0.8, y = 1, title = 'Project size<br>(# turbines)<br>',
-           font = list(family = 'serif', size = 14, color = 'black'))%>%
+           titlefont = list(family = 'serif', size = 14, color = 'black'))%>%
   layout(legend = list(x = 0.7, y = 1),
-         annotations = a,
+         annotations = append(a, list(ax = 20)),
          xaxis = append(list(title = "Effort (hr*km<sup>3</sup>)"), ax),
          yaxis = append(list(title = "Estimated eagle fatalities"), ax))
 
@@ -371,7 +373,7 @@ glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 # Create a simulation dataset of project sizes and true eagle activity rates
 # For testing purposes, assume all turbines are 200m tall w/80m blades
 test_values <- expand.grid(erate = seq(0,3,0.05),
-                           size = turbines_to_size(seq(20, 500, 20)))
+                           size = turbines_to_size(seq(20, 500, 20), 100, 50))
 
 #Estimated survey cost data from West Ecosystems Inc.
 survey_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
@@ -459,7 +461,7 @@ plot_ly(type = 'scatter', mode = 'lines')%>%
 
 
 sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
-                   round(size, 4) %in% c(293.5504, 1761.3025, 3816.1554, 5871.0084, 7338.7604))
+                   size %in% turbines_to_size(c(20, 140, 160, 380, 500), 100, 50))
 
 
 # Lattice of example curves showing effort/cost relationships at a variety of scenarios
@@ -556,3 +558,14 @@ orca(fig4, file = 'Fig4.png', format = tools::file_ext('png'), scale = 20)
 # what proportion of simulated scenarios would reduce their costs by continued monitoring
 
 # slope of discrepancy is proportional to (alpha - (rate*beta))/(beta+x)
+
+# TEST TO SEE IF OUR EMPIRICAL MODEL IS A GOOD PREDICTOR OF DISCREPANCY
+# breusch pagan test
+library(lmtest)
+test <- mutate(sim, predicted = effort_discrepancy_slope(eagle_rate, expose$shape, expose$rate, b, 200))
+cor(test$predicted, test$UQ_F - test$UQ)
+rmse <- sqrt(mean((test$predicted - (test$UQ_F-test$UQ))^2))
+msd <- mean(test$predicted - (test$UQ_F-test$UQ))
+
+model <- lm(data = test, predicted ~ I(UQ_F - UQ))
+bptest(model)

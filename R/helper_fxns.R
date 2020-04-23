@@ -15,16 +15,24 @@ goldCollision <- list('shape' = 1.29, 'rate' = 227.6)
 expose <- list('shape' = 0.968, 'rate' = 0.552)
 collide <- list('shape' = 2.31, 'rate' = 396.69)
 
-#Site expansion factor assuming 200m tall turbines w/80m rotors operating 10hrs/day
-expFac <- 3650*(0.2)*(0.08^2)*pi
+#Site expansion factor assuming 100m tall turbines w/50m rotors operating 10hrs/day
+# Turbine specs: http://www.aweo.org/windmodels.html
+#expFac <- 3650*(0.2)*(0.08^2)*pi
+expFac <- 3650*(0.1)*(0.05^2)*pi
 #' convert number of turbines to project 'size'
 #'
-#' this function assumes 200m tall turbines with 80m rotors
+#' this function assumes  turbines operate 365 days/year for 10hr/day
 #'
 #' @param n number of turbines
-#' @return size (km3)
-turbines_to_size <- function(n){
-  size = n*3650*(0.2)*(0.08^2)*pi
+#' @param h turbine tower height (m)
+#' @param r turbine rotor radius (m)
+#' @return size (hr*km3)
+turbines_to_size <- function(n, h, r){
+  # convert lengths to km
+  h <- h/1000
+  r <- r/1000
+  size = n*3650*(h)*(r^2)*pi
+  #size = n*3650*(0.2)*(0.08^2)*pi
   return(size)
 }
 
@@ -251,11 +259,19 @@ min_cost <- function(erate, size, mrate, srate){
 
 #' Equation defining relationship between effort and discrepancy
 #'
+#'This assumes the mean of the gamma distribution is used
 #' @param erate inherent rate of eagle activity
 #' @param a shape parameter from exposure prior
 #' @param b rate parameter from exposure prior
 #' @param w effort
 #' @return numeric value
-effort_discrepancy_slope <- function(erate, a, b, w){
-  (erate*b - a)/(b+w)
+effort_discrepancy_slope <- function(erate, a, b, w, n){
+  #turbines_to_size(n)*collide$shape/(collide$shape + collide$rate)*(a-(erate*b))/(b+w)
+  expFac*n/100*(a-(erate*b))/(b+w)
+}
+
+#' w = 2ca - 2crb - b
+effort_needed <- function(nturbines, eagle_rate, threshold){
+  constant <- 1/threshold*expFac*nturbines/100
+  (constant * expose$shape) - (constant*eagle_rate*expose$rate) - expose$rate
 }
