@@ -124,18 +124,6 @@ for(i in seq(0, 2, 0.2)){
   p <- add_trace(p, x = crv$x, y = crv$y)
 }
 
-# DEPRICATED
-# return upper quantiles for simulation data
-# uppers <- vapply(1:nrow(df), function(x) {
-#   a <- df$a
-#   b <- df$b
-#   out <- prediction(10000, a+sum(Bay16$FLIGHT_MIN), b+sum(Bay16$EFFORT))
-#   q80 <- quantile(out$fatality, 0.8)
-#   out2 <- prediction(10000, a, b)
-#   q82 <- quantile(out2$fatality, 0.8)
-#   return (c("U_F" = q80, "U" = q82))
-# }, USE.NAMES = FALSE, FUN.VALUE = c(0,0))
-
 # Predict fatalities with and without using priors for simulated scenarios
 sim <- plyr::mdply(df[,c(5, 4)], estimates, niters = 10000, nturbines = 200)%>%
   # add erate, TIME, AREA columns
@@ -375,21 +363,26 @@ glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 test_values <- expand.grid(erate = seq(0,3,0.05),
                            size = turbines_to_size(seq(20, 500, 20), 100, 50))
 
+#Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
+cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
+
+# create dataframe of levels of effort
+effort_df <- data.frame(effort = seq(0, 200, 2))
+
+# create a subset of scenarios for generating a lattice plot of cost/effort curves
+sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                   size %in% turbines_to_size(c(20, 140, 160, 380, 500), 100, 50))
+
 #Estimated survey cost data from West Ecosystems Inc.
 survey_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
                      "Low" = 2000/12, 'High' = 5000/12,
                      'annual_low_pMW' = 300, 'annual_high_pMW' = 600)
 
 #From Adt report
-retro_costs <- list('Low' = 1040, 'High' = 2590)
+retro_costs <- list('Low_ppole' = 1040, 'High_ppole' = 2590)
 electro_rates <- list('Low' = 0.0036, 'Median' = 0.0051, 'High' = 0.0066)
 durations <- c(10, 20, 30, 40, 50)
 
-#Read in table of total mitigation costs per eagle from ABT report for different durations & cost estimates
-cost_table <- read.csv(file = 'data/ABT_REA_costs.csv', header = TRUE)
-
-# create dataframe of levels of effort
-effort_df <- data.frame(effort = seq(0, 200, 2))
 
 #' Create line plots showing cost vs. effort curves
 #' @param erate true eagle activity rate (min/hr*km3)
@@ -401,6 +394,7 @@ effort_df <- data.frame(effort = seq(0, 200, 2))
 #' plot_curves(2, 200, retro_costs$High, survey_costs$High)
 plot_curves <- function(erate, nturb, mcost, scost){
   size <- nturb*expFac
+  mitigation <- size*(erate*qbeta(0.8, collide$shape, collide$rate))
   output <- plyr::mdply(effort_df, cost_curve, erate, size, mcost, scost)
   min_effort <- output$effort[output$T == min(output$T)]
   plot_ly(data = output, type = 'scatter', mode = 'lines')%>%
@@ -430,11 +424,17 @@ plot_curves <- function(erate, nturb, mcost, scost){
       line = list(color = 'black', width = 1),
       name = paste('Min cost effort (', min_effort, ' hrs)', sep = "")
     )%>%
+    add_trace(
+      x = ~effort, y = ~ -abs((mitigation*mcost) - M),
+      name = '$/eagle',
+      yaxis = 'y2'
+    )%>%
     layout(
       xaxis = list(title = 'Survey effort (hr*km<sup>3</sup>)'),
       yaxis = list(title = 'Cost ($)'),
       #annotations = a,
-      legend = list(x = 0.2, y = 1)
+      legend = list(x = 0.2, y = 1),
+      yaxis2 = list(overlaying = 'y', side = 'right')
     )
 }
 
@@ -459,20 +459,16 @@ plot_ly(type = 'scatter', mode = 'lines')%>%
   add_trace(data = filter(test_cost_surface, size == unique(test_values$size)[25]),
             x = ~erate, y = ~effort)
 
-
-sub_test <- filter(test_values, erate %in% c(0, 0.5, 1.0, 1.5, 2.0, 2.5),
-                   size %in% turbines_to_size(c(20, 140, 160, 380, 500), 100, 50))
-
-
 # Lattice of example curves showing effort/cost relationships at a variety of scenarios
 multiplot <- function(i){
-  x <- seq(0, 200, 1)
-  cst <- curve(cost(x, sub_test$erate[i], sub_test$size[i], retro_costs$High, survey_costs$Low)[['T']],
-               from = 0, to = 200)
-  mon <- curve(cost(x, sub_test$erate[i], sub_test$size[i], retro_costs$High, survey_costs$Low)[['M']],
-               from = 0, to = 200)
-  surv <- curve(cost(x, sub_test$erate[i], sub_test$size[i], retro_costs$High, survey_costs$Low)[['S']],
-                from = 0, to = 200)
+  retro_cost <- filter(cost_table, Duration == 30, Rate == 'Median', Cost == 'High')$M
+  x <- seq(0, 100, 1)
+  cst <- curve(cost(x, sub_test$erate[i], sub_test$size[i], retro_cost, survey_costs$Low)[['T']],
+               from = 0, to = 100)
+  mon <- curve(cost(x, sub_test$erate[i], sub_test$size[i], retro_cost, survey_costs$Low)[['M']],
+               from = 0, to = 100)
+  surv <- curve(cost(x, sub_test$erate[i], sub_test$size[i], retro_cost, survey_costs$Low)[['S']],
+                from = 0, to = 100)
   cols <- viridis(5)
   plot_ly(type = 'scatter', mode = 'lines')%>%
     add_trace(
@@ -513,7 +509,7 @@ fig3 <- subplot(lapply(1:nrow(sub_test), multiplot),
          yaxis5 = append(list(title = ''),ax),
          xaxis = append(list(title = ''),ax),
          xaxis2 = append(list(title = ''),ax),
-         xaxis3 = append(list(title = 'Effort (hr*km<sup>3</sup>)'), ax),
+         xaxis3 = append(list(title = 'Survey effort (hr*km<sup>3</sup>)'), ax),
          xaxis4 = append(list(title = ''),ax),
          xaxis5 = append(list(title = ''),ax),
          xaxis6 = append(list(title = ''),ax))
@@ -523,21 +519,22 @@ fig3 <- subplot(lapply(1:nrow(sub_test), multiplot),
 
 # pre calculate matrices representing optimized effort for different combinations of
 # estimated mitigation and survey costs By default, low and high values are defined for
-# median electrocution rate (0.0051 eagles/pole*yr) and 20 year retrofit duration
+# median electrocution rate (0.0051 eagles/pole*yr) and 30 year retrofit duration
 # TODO: incorporate different durations?
-low_low <- mutate(test_values, mrate = retro_costs$Low, srate = survey_costs$Low)%>%
+retro_cost <- filter(cost_table, Duration == 30, Rate == 'Median')
+low_low <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'Low', 'M'], srate = survey_costs$Low)%>%
   plyr::mdply(min_cost)
-low_high <- mutate(test_values, mrate = retro_costs$Low, srate = survey_costs$High)%>%
+low_high <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'Low', 'M'], srate = survey_costs$High)%>%
   plyr::mdply(min_cost)
-high_low <- mutate(test_values, mrate = retro_costs$High, srate = survey_costs$Low)%>%
+high_low <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'High', 'M'], srate = survey_costs$Low)%>%
   plyr::mdply(min_cost)
-high_high <- mutate(test_values, mrate = retro_costs$High, srate = survey_costs$High)%>%
+high_high <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'High', 'M'], srate = survey_costs$High)%>%
   plyr::mdply(min_cost)
 
 save(high_high, low_low, low_high, high_low, file = 'data/cost_surfaces_95.rdata')
 load(file = 'data/cost_surfaces_95.rdata')
 # Create heatmap of minimum cost efforts
-fig4 <- plot_ly(type = 'heatmap', z = acast(high_low, erate~size, value.var = "effort"),
+fig4 <- plot_ly(type = 'heatmap', z = acast(high_high, erate~size, value.var = "effort"),
                 y = seq(0,2,0.05), x = seq(20,500,20),
                 zmin = 0, zmax = 40, colors = colorRamp(c('black', 'white')))%>%
   colorbar(title = 'Survey effort<br>(hr*km<sup>3</sup>)',

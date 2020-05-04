@@ -154,7 +154,7 @@ output$surfacePlot <- renderPlotly({
 })
 
 output$curvePlot <- renderPlotly({
-  mcost <- filter(cost_table, Cost == input$mcost, Duration == 20, Rate == "Median")%>%
+  mcost <- filter(cost_table, Cost == input$mcost, Duration == 30, Rate == "Median")%>%
     select(M)
   scost <- survey_costs[input$scost][[1]]
   erate <- input$erate

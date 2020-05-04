@@ -56,7 +56,7 @@ vir_col <- function(n){
   return (substr(viridis(n),1,7))
 }
 
-#'
+#' estimate fatalities from the collision risk model
 #' @param BMin observed number of bird minutes
 #' @param Fatal annual avian fatalities on an operational wind facility
 #' @param SmpHrKm total time and area surveyed for bird minutes
