@@ -19,7 +19,6 @@ runtime: shiny
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(base64enc)
 library(plyr)
 library(dplyr)
 library(plotly)
@@ -165,10 +164,15 @@ output$curvePlot <- renderPlotly({
 modal <- modalDialog(
         title = "Predicting Eagle Mortality at Wind Energy Sites",
         fluidRow(
-               img(src = dataURI(file = "www/turbines.jpg", mime = "image/jpg"),
-                   alt = "Eagle flying near wind turbines",
-                   height = 300, width = 300, align = 'left',
-                   style = 'margin: 0px 10px 10px 0px;'),
+          renderImage({
+            list(
+              src = 'www/turbines.jpg',
+              contentType = 'image/jpg',
+              width = 300,
+              height = 300,
+              alt = 'Eagle flying near wind turbines'
+            )
+          }),
                  p("The Bald and Golden Eagle Protection Act (BAGEPA) requires wind energy projects to obtain an incidental take permit for any bald or golden eagles that might be killed as a result of the project's operation. The ", tags$a(href = "https://www.fws.gov/", "U.S. Fish and Wildlife Service")," uses a Bayesian model to estimate how many eagles will be killed at a proposed project. The model combines eagle activity and collision rate data from existing wind farms with eagle activity data collected during surveys at the proposed site. To receive a permit, developers must mitigate for the incidental take of the predicted number of eagles."),
 br(),
 p("Mitigation often involves buying retrofits for power transmission lines that prevent eagles from being electrocuted, and greater predicted take requires more mitigation. Simultaneously, more survey effort produces eagle fataliy estimates that more closely reflect eagle activity levels at the proposed site (rather than existing sites). Therefore, the total cost of mitigation is related to four factors:"),
