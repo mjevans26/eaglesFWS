@@ -1,6 +1,6 @@
 ---
 title: "FWS Eagle Mortality Model"
-author: "Michael Evans"
+author: "Center for Conservation Innovation"
 output: 
   flexdashboard::flex_dashboard:
     css: www/dashboard.css
@@ -81,9 +81,13 @@ tags$ol(
   tags$li("Survey Hours: time spent conducting eagle surveys."),
   tags$li("Flight Time: the total time eagles were observed flying within survey areas")
 ),
-p("The tabs at the top of the page allow you to switch between golden and bald eagle estimates."),
   easyClose = TRUE
   )
+
+# create a button to show the modal 
+expand <- actionButton("show", "Click for Details")
+observeEvent(input$show,
+             {showModal(introModal)})
 
 # define inputs
 selectTurbines <- numericInput('n',
@@ -188,6 +192,14 @@ output$exposure <- renderPlotly({exposurePlot(input$min, input$hrs, input$area)}
 Inputs {.sidebar data-width=400}
 ====================
 
+### About
+
+This dashboard demonstrates the behavior of the Collision Risk Model used to predict eagle fatalities at proposed wind energy facilities. Click below for more details.
+
+```{r expand, echo = FALSE}
+expand
+```
+
 ### <i class="fa fa-sliders"></i> Parameters
 
 Project specs:
@@ -224,8 +236,7 @@ helpText("Note: Calcuating predicted fatality distributions takes time.  Please 
 ```
 
 `r hr()`
-
-# Golden Eagles
+===
 
 Column 
 --------------------------------------------------------------------------
@@ -233,9 +244,6 @@ Column
 ### Eagle Activity
 
 ```{r exposures, echo = FALSE}
-# call introModal to make modal appear
-introModal
-
 # observeEvent(input$update, {
 #   obs <- isolate({cur_min()/cur_effort()})
 #   post <- isolate({curve(dgamma(x, shape = a(), rate = b()), from = 0, to = 6)})

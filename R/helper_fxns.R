@@ -11,9 +11,13 @@ baldCollision <- list('shape' = 1.61, 'rate' = 228.2)
 goldExposure <- list('shape' = 0.287, 'rate' = 0.237)
 goldCollision <- list('shape' = 1.29, 'rate' = 227.6)
 
-# CRM priors provided by E. Bjerre 4/10/20
-expose <- list('shape' = 0.968, 'rate' = 0.552)
-collide <- list('shape' = 2.31, 'rate' = 396.69)
+# # CRM priors provided by E. Bjerre 4/10/20
+# expose <- list('shape' = 0.968, 'rate' = 0.552)
+# collide <- list('shape' = 2.31, 'rate' = 396.69)
+
+# CRM priors updated in New et al. 2018
+expose <- list('shape' = 0.287, 'rate' = 0.237)
+collide <- list('shape' = 1.29, 'rate' = 227.6)
 
 #Site expansion factor assuming 100m tall turbines w/50m rotors operating 10hrs/day
 # Turbine specs: http://www.aweo.org/windmodels.html
@@ -137,7 +141,7 @@ estimates <- function(niters, a, b, nturbines){
   out <- simFatal(BMin = a,
                   Fatal = -1,
                   SmpHrKm = b,
-                  ExpFac = turbines_to_size(nturbines),
+                  ExpFac = turbines_to_size(nturbines, 100, 50),
                   aPriExp = expose$shape,
                   bPriExp = expose$rate,
                   aPriCPr = collide$shape,
@@ -148,7 +152,7 @@ estimates <- function(niters, a, b, nturbines){
   out2 <- simFatal(BMin = a,
                    Fatal = -1,
                    SmpHrKm = b,
-                   ExpFac = turbines_to_size(nturbines),
+                   ExpFac = turbines_to_size(nturbines, 100, 50),
                    aPriExp = 0,
                    bPriExp = 0,
                    aPriCPr = collide$shape,
@@ -156,49 +160,43 @@ estimates <- function(niters, a, b, nturbines){
                    iters = niters)
   fatality2 <- mean(out2$fatality)
   q82 <- quantile(out2$fatality, 0.8)
-  return (c("MN_F" = fatality, "U_F" = q80, "MN" = fatality2, "U" = q82))
+  return (c("CRM_mean" = fatality, "CRM_80" = q80, "Survey_mean" = fatality2, "Survey_80" = q82))
 }
 
 #' Calculate total mitigation and monitoring costs
 #'
 #' @description This function calculates the...the first argument is effort because this is what will be optimized over
 #' @param effort survey effort (hrs*km3). Will be optimized when used with optimize()
-#' @param data data frame with columns 'a', 'size' 'mcost' and 'acost.' These columns must containe
+#' @param data data frame with columns 'erate', 'size' 'mcost' and 'acost.' These columns must containe
 #'  contain eagle activity rate, project size, per eagle mitigation cost, and hourly survey cost respectively
 #'
 #' @return total cost of mitigation and monitoring (numeric)
 cost_fxn <- function(effort, data){
   with(data, {
-    activity <- a*effort
-    #activity <- 1
-    #size <- 10
-    aExp <- goldExposure$shape
-    bExp <- goldExposure$rate
-    aCPr <- goldCollision$shape
-    bCPr <- goldCollision$rate
-    #Read in effort values (hrs*km3)
+    activity <- erate*effort
     #Do we need to use rv here?
-    EXP <- rvgamma(1, aExp + activity, bExp + effort)
-    COL <- rvbeta(1, aCPr, bCPr)
+    EXP <- rvgamma(1, expose$shape + activity, expose$rate + effort)
+    COL <- rvbeta(1, collide$shape, collide$rate)
     Fatal <- EXP * COL * size
-    M <- rvquantile(Fatal, 0.8) * mrate#38000
+    E <- rvquantile(Fatal, 0.8)
+    M <- E* mrate#38000
     S <- effort * srate#167
-    total_cost <- M+S
-    return(total_cost)
+    Total <- M+S
+    return(Total)
   })
 }
 
 #' Calculate mitigation, monitoring, and total costs
 #'
 #' @param effort survey effort (hr*km3)
-#' @param a eagle activity rate (eagle min/hr)
+#' @param erate eagle activity rate (eagle min/hr)
 #' @param size project size in number of turbines
 #' @param mcost cost of mitigation for 1 eagle take
 #' @param scost hourly cost of pre-construction monitoring
 #'
 #' @return data.frame with eagles('E'), total ('T'), mitigation ('M'), survey ('S') costs
-cost <- function(effort, a, size, mrate, srate){
-  activity <- a*effort
+cost <- function(effort, erate, size, mrate, srate){
+  activity <- erate*effort
   #activity <- 1
   #size <- 10
   aExp <- expose$shape
@@ -239,7 +237,7 @@ cost_curve <- function(effort, erate, size, mrate, srate){
 #'  per eagle mitigation costs and hourly survey costs.
 #' @param
 optim_fxn <- function(erate, size, mrate, srate){
-  opt <-optimize(cost_fxn, interval = c(0, 500), data = data.frame(a = erate, size = size, mrate = mrate, srate = srate), tol = 0.00000001)
+  opt <-optimize(cost_fxn, interval = c(0, 500), data = data.frame(erate = erate, size = size, mrate = mrate, srate = srate), tol = 0.00000001)
   return(data.frame(effort = opt$minimum, cost = opt$objective))
 }
 
@@ -249,12 +247,74 @@ min_cost <- function(erate, size, mrate, srate){
   crv <- curve(cost(x, erate, size, mrate, srate)$T,
                from = 0, to = 500)
 
-  lo <- loess(crv$y ~ crv$x, span = 0.2)
-  smoothed <- predict(lo, x = crv$x)
+  # lo <- loess(crv$y ~ crv$x, span = 0.2)
+  # smoothed <- predict(lo, x = crv$x)
+  #
+  # min_effort <- crv$x[smoothed == min(smoothed)]
+  #
+  # return(data.frame(cost = min(smoothed), effort = min_effort))
+  #
+  min_cost <- min(crv$y)
+  min_effort <- crv$x[crv$y == min_cost]
+  return(data.frame(cost = min_cost, effort = min_effort))
+}
 
-  min_effort <- crv$x[smoothed == min(smoothed)]
-
-  return(data.frame(cost = min(smoothed), effort = min_effort))
+#' Function calculating maximum eagles and minimum costs
+#'
+#'This assumes the mean of the gamma distribution is used
+#' @param erate inherent rate of eagle activity (min/hr*km3)
+#' @param size size of facility accounting for operation time (hr*km3)
+#' @param mrate per eagle cost of mitigation
+#' @param srate per hour cost of surveying
+#' @return data.frame
+max_eagle <- function(erate, size, mrate, srate){
+  # calculate the crm exposure curve
+  exposure <- curve(qgamma(0.8, expose$shape + (erate*x), expose$rate + x),
+               from = 0, to = 100)
+  # define multiplier for determining mitigation costs
+  constant <- 0.01*size*mrate
+  # create survey cost vs. effort curve
+  survey <- curve(srate*x, from = 0, to = 100)
+  # create total cost curve by combining exposure * contant + survey
+  costs <- (exposure$y*constant) + survey$y
+  # find minimum cost
+  minCost <- min(costs)
+  # match the index of the minimum cost value to corresponding survey effort
+  minEffort <- survey$x[match(minCost, costs)]
+  # find the maximum exposure
+  # could be a) equal to the 'true' erate, with inifite surveying
+  maxExposure <- qgamma(0.8, expose$shape + (erate*10000), expose$rate + 10000)
+  # or b) equal to the estimated exposure at the services minimum
+  # maxExposure <- qgamma(0.8, expose$shape + (erate*9.65), expose$rate + 9.65)
+  # identify effort resulting in max exposure
+  maxEffort <- exposure$x[exposure$y==maxExposure]
+  # get costs associated with levels of effort producing maximum eagles and minimum costs
+  minCosts <- cost(minEffort, erate, size, mrate, srate)
+  maxCosts <- cost(maxEffort, erate, size, mrate, srate)
+  return(data.frame(minCost = minCosts$T,
+                    minEffort = minEffort,
+                    minEagles = minCosts$E,
+                    minSurvey = minCosts$S,
+                    minMitigation = minCosts$M,
+                    maxCost = maxCosts$T,
+                    maxEffort = maxEffort,
+                    maxSurvey = maxCosts$S,
+                    maxMitigation = maxCosts$M,
+                    maxEagles = maxCosts$E))
+}
+max_eagle <- function(erate, size, mrate, srate){
+  crv <- curve(cost(x, erate, size, mrate, srate)$E,
+               from = 0, to = 100)
+  stableEagle <- mean(crv$y[80:100]) - 0.1
+  maxEffort <- min(crv$x[which(crv$y >= stableEagle)])
+  costs <- cost(maxEffort, erate, size, mrate, srate)
+  # opt <-optimize(cost_fxn, interval = c(-1, 500), data = data.frame(erate = erate, size = size, mrate = mrate, srate = srate), maximum = TRUE)
+  # return(data.frame(eagles = opt$objective, effort = opt$maximum))
+  return(data.frame(maxEffort = maxEffort,
+                    maxEagles = costs$E,
+                    maxSurvey = costs$S,
+                    maxMitigation = costs$M,
+                    maxCost = costs$T))
 }
 
 #' Equation defining relationship between effort and discrepancy
@@ -274,4 +334,17 @@ effort_discrepancy_slope <- function(erate, a, b, w, n){
 effort_needed <- function(nturbines, eagle_rate, threshold){
   constant <- 1/threshold*expFac*nturbines/100
   (constant * expose$shape) - (constant*eagle_rate*expose$rate) - expose$rate
+}
+
+difffxn <- function(nturbines, obs_min, effort){
+  crm <- qgamma(0.8, expose$shape + obs_min, expose$rate + effort)
+  siteonly <- qgamma(0.8, obs_min, effort)
+  diff <- (crm - siteonly)*expFac*100*qbeta(0.8, collide$shape, collide$rate)
+  return(diff)
+}
+
+testfxn <- function(erate, effort){
+  crm <- qgamma(0.8, expose$shape + (erate * effort), expose$rate + effort)
+  site <- qgamma(0.8, erate*effort, effort)
+  return(list('CRM' = crm, 'SITE' = site, 'DIFF' = crm-site))
 }

@@ -8,9 +8,9 @@ library(tidyr)
 library(rv)
 library(viridis)
 
-source("C:/Users/mevans/repos/eaglesFWS/R/helper_fxns.R")
-load('vignettes/data/newdata.RData')
 
+load('vignettes/data/newdata.RData')
+source("R/helper_fxns.R")
 # define plot styles
 # axis format
 ax <- list(
@@ -308,7 +308,7 @@ fig2b <- plot_ly(data = filter(zerosim, Effort > 0.402, Effort <= 100),
          xaxis = append(list(title = "Effort (hr*km<sup>3</sup>)"), ax),
          yaxis = append(list(title = "Estimated eagle fatalities"), ax))
 
-h#Scatter plot size of 80% CI as a function of survey effort for simulated data. Color by eagle rate
+#Scatter plot size of 80% CI as a function of survey effort for simulated data. Color by eagle rate
 plot_ly(sim)%>%
   add_trace(x = ~b, y = ~UQ_F-MN_F, type = "scatter", mode = "markers",
             color = ~ eagle_rate,
@@ -359,7 +359,7 @@ glm(data = sim, (MN_F - MN) ~ (eagle_rate - 1.099637)/0.1094509)
 
 #COST BENEFIT ANALYSIS
 # Create a simulation dataset of project sizes and true eagle activity rates
-# For testing purposes, assume all turbines are 200m tall w/80m blades
+# For testing purposes, assume all turbines are 100m tall w/50m blades
 test_values <- expand.grid(erate = seq(0,3,0.05),
                            size = turbines_to_size(seq(20, 500, 20), 100, 50))
 
@@ -381,6 +381,7 @@ survey_costs <- list('annual_low_ppt' = 2000, 'annual_high_ppt' = 5000,
 #From Adt report
 retro_costs <- list('Low_ppole' = 1040, 'High_ppole' = 2590)
 electro_rates <- list('Low' = 0.0036, 'Median' = 0.0051, 'High' = 0.0066)
+
 durations <- c(10, 20, 30, 40, 50)
 
 
@@ -502,11 +503,11 @@ multiplot <- function(i){
 fig3 <- subplot(lapply(1:nrow(sub_test), multiplot),
               nrows = 5, shareY = TRUE,
               titleY = TRUE, shareX =TRUE,titleX= TRUE)%>%
-  layout(yaxis = append(list(title = ''), ax),
-         yaxis2 = append(list(title = ''),ax),
-         yaxis3 = append(list(title = 'Cost ($)'), ax),
-         yaxis4 = append(list(title = ''),ax),
-         yaxis5 = append(list(title = ''),ax),
+  layout(yaxis = append(list(title = '', type = 'log', range = c(0, 6)), ax),
+         yaxis2 = append(list(title = '', type = 'log', range = c(0, 6)),ax),
+         yaxis3 = append(list(title = 'Cost ($)', type = 'log', range = c(0, 6)), ax),
+         yaxis4 = append(list(title = '', type = 'log', range = c(0, 6)),ax),
+         yaxis5 = append(list(title = '', type = 'log', range = c(0, 6)),ax),
          xaxis = append(list(title = ''),ax),
          xaxis2 = append(list(title = ''),ax),
          xaxis3 = append(list(title = 'Survey effort (hr*km<sup>3</sup>)'), ax),
@@ -529,12 +530,18 @@ low_high <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'Low', 'M'
 high_low <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'High', 'M'], srate = survey_costs$Low)%>%
   plyr::mdply(min_cost)
 high_high <- mutate(test_values, mrate = retro_cost[retro_cost$Cost == 'High', 'M'], srate = survey_costs$High)%>%
-  plyr::mdply(min_cost)
+  plyr::mdply(optim_fxn)
+  # plyr::mdply(min_cost)
+
+high_high[7:11] <- plyr::mdply(high_high[,1:4], max_eagle)[5:9]
+high_low[7:11] <- plyr::mdply(high_low[,1:4], max_eagle)[5:9]
+low_high[7:11] <- plyr::mdply(low_high[,1:4], max_eagle)[5:9]
+low_low[7:11] <- plyr::mdply(low_low[,1:4], max_eagle)[5:9]
 
 save(high_high, low_low, low_high, high_low, file = 'data/cost_surfaces_95.rdata')
 load(file = 'data/cost_surfaces_95.rdata')
 # Create heatmap of minimum cost efforts
-fig4 <- plot_ly(type = 'heatmap', z = acast(high_high, erate~size, value.var = "effort"),
+fig4 <- plot_ly(type = 'heatmap', z = acast(high_high, erate~size, value.var = "minCostEffort"),
                 y = seq(0,2,0.05), x = seq(20,500,20),
                 zmin = 0, zmax = 40, colors = colorRamp(c('black', 'white')))%>%
   colorbar(title = 'Survey effort<br>(hr*km<sup>3</sup>)',
@@ -544,13 +551,15 @@ fig4 <- plot_ly(type = 'heatmap', z = acast(high_high, erate~size, value.var = "
     xaxis = append(list(title = 'Project size (# turbines)'), ax)
   )
 
+
 # Write figures to file for manuscript
 orca(fig1a, file = 'Fig1a.png', format = tools::file_ext('png'), scale = 20)
 orca(fig1b, file = 'Fig1b.png', format = tools::file_ext('png'), scale = 20)
-orca(fig2a, file = 'Fig2a.png', format = tools::file_ext('png'), scale = 20)
-orca(fig2b, file = 'Fig2b.png', format = tools::file_ext('png'), scale = 20)
+orca(fig2a, file = 'Fig2a.png', format = tools::file_ext('png'), scale = 10, height = 500, width = 1000)
+orca(fig2b, file = 'Fig2b.png', format = tools::file_ext('png'), scale = 10, height = 500, width = 1000)
 orca(fig3, file = 'Fig3.png', format = tools::file_ext('png'), scale = 20)
-orca(fig4, file = 'Fig4.png', format = tools::file_ext('png'), scale = 20)
+orca(fig4a, file = 'Fig4a.png', format = tools::file_ext('png'), scale = 10)
+orca(fig4b, file = 'Fig4b.png', format = tools::file_ext('png'), scale = 10)
 # optimization to minimize eagle death
 # what proportion of simulated scenarios would reduce their costs by continued monitoring
 
